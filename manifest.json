@@ -2,7 +2,7 @@
   "name": "Styleremover",
   "id": "1214555573306274401",
   "api": "1.0.0",
-  "main": "code.js",
+  "main": "dist/main.js",
   "capabilities": [],
   "enableProposedApi": false,
   "editorType": [
