@@ -7,5 +7,12 @@
   "enableProposedApi": false,
   "editorType": [
     "figma"
+  ],
+  "parameters": [
+    {
+      "name": "Remove styles from",
+      "key": "choice",
+      "description": "Choose if you want to remove styles from from nested layers of your current selection or not."
+    }
   ]
 }
