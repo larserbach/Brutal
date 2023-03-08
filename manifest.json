@@ -1,6 +1,6 @@
 {
-  "name": "Styleremover",
-  "id": "1214555573306274401",
+  "name": "Brutal",
+  "id": "1215386279132052346",
   "api": "1.0.0",
   "main": "dist/main.js",
   "capabilities": [],
@@ -12,7 +12,14 @@
     {
       "name": "Remove styles from",
       "key": "choice",
-      "description": "Choose if you want to remove styles from from nested layers of your current selection or not."
+      "description": "Remove styles from from:"
+    },
+    {
+      "name": "Preserve layers",
+      "key": "name",
+      "description": "Don't touch layers with names starting with:",
+      "allowFreeform": true,
+      "optional": true
     }
   ]
 }

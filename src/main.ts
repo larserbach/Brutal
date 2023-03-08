@@ -1,37 +1,39 @@
-const types = [
-	"BOOLEAN_OPERATION",
-	"COMPONENT",
-	"COMPONENT_SET",
-	"CONNECTOR",
-	"DOCUMENT",
-	"ELLIPSE",
-	"FRAME",
-	"GROUP",
-	"INSTANCE",
-	"LINE",
-	"PAGE",
-	"POLYGON",
-	"RECTANGLE",
-	"SHAPE_WITH_TEXT",
-	"SLICE",
-	"STAMP",
-	"STAR",
-	"STICKY",
-	"TEXT",
-	"VECTOR",
-  ];
-  
 
 // The 'input' event listens for text change in the Quick Actions box after a plugin is 'Tabbed' into.
 figma.parameters.on('input', ({ key, query, result }) => {
 	switch (key) {
 		case 'choice':
-
-			const choices = ["everything", "only nested layers"]
-
+			// the user must choose if he want's to remove only nested layers
+			const choices = ["All layers in selection", "Only nested layers in selection"]
 			const suggestions = choices.filter(s => s.includes(query));
 			result.setSuggestions(suggestions);
-			break;
+		break;
+
+		case 'name':
+			// providing the option to preserve styles on named layers
+
+			const sel = figma.currentPage.selection;
+
+			const customfilter = (node: SceneNode) => node.name.toLowerCase().startsWith(query.toLowerCase());
+
+			let nodes: SceneNode[] = query.length > 0 ? sel.flatMap(node => getAllNestedNodes(node).concat(node))
+				.filter(node => node.name != null && customfilter(node)) : [];
+
+			// filter out SceneNodes with duplicate names
+			nodes = nodes.filter((value, index, self) =>
+				index === self.findIndex((t) => (
+				  t.name === value.name
+				))
+			)
+
+			const formattedNodes = nodes.map((node:any) => {
+				const name = node.name;
+				return ({ name, data:  node.name} );
+			});
+
+			const namesuggestions = [...formattedNodes];
+			result.setSuggestions(namesuggestions);
+		break;
 		default:
 			return;
 	}
@@ -46,38 +48,34 @@ figma.on('run', ({ parameters }) => {
   
 
 function startPluginWithParameters(parameters: any) {
-	console.log(parameters);
-	
+
 	const sel = figma.currentPage.selection;
-	const excludedNodes: string[] = ["Frame"];
+	// the user must make a selection
+	if(sel.length > 0){
+		const excludedNode: string = parameters.name ? parameters.name.toLowerCase() : [];
 
-	const nodes =  sel.flatMap(s => getAllNestedNodes(s, excludedNodes))
-	nodes.forEach(removeStyle)
+		// get all child nodes of the selection, except those matching the second user input
+		const nodes =  sel.flatMap(node => getAllNestedNodes(node, excludedNode))
+		nodes.forEach(removeStyle)
 
-	if(parameters.choice === "everything"){
-		sel.flatMap(s => removeStyle(s))
+		// if the user choose to remove styles from any layer
+		if(parameters.choice === "All layers in selection"){
+			const customfilter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
+			const filteredSel  = sel.filter( (node: SceneNode) => excludedNode.length === 0 ? true : customfilter(node));
+			filteredSel.forEach(node => removeStyle(node))
+		}
 	}
-	const message = sel.length > 0 ? "You've got no styles no more" : "🥴 Ooops! Please make a selection"
+	const message = sel.length > 0 ? "👻 Styles removed" : "👾 Please make a selection"
 	figma.closePlugin(message);
 }
 
 
-
-function getAllNestedNodes (sel : SceneNode, excludedNodes: string[]): SceneNode[]
+function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNode[]
 {
-	
-	const lowerCaseExcludedNodes: string[] = excludedNodes.map(n => n.toLowerCase());
-	console.log(lowerCaseExcludedNodes)
-
-	const filter = (node: any) => !lowerCaseExcludedNodes.includes(node.name.toLowerCase());
-	
-	const nodes  = ('children' in sel) ? (sel.findAll( (node: SceneNode) => excludedNodes.length === 0 ? true : filter(node))) : [];
-
-	return nodes;
-	
+	const filter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
+	const nodes  = ('children' in sel) ? (sel.findAll( (node: SceneNode) => excludedNode.length === 0 ? true : filter(node))) : [];
+	return nodes;	
 };
-
-
 
 
 function removeStyle(elem: any){
@@ -85,11 +83,15 @@ function removeStyle(elem: any){
 	if(elem.fills != undefined ){
 		elem.fills = [];
 		elem.fillStyleId = "";
-		console.log("remove fills")
 	}
 
 	if(elem.strokes != undefined ){
 		elem.strokes = [];
 		elem.strokeStyleId = "";
+	}
+
+	if(elem.effects != undefined) {
+		elem.effects = [];
+		elem.effectStyleId = "";
 	}
 }
