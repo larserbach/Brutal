@@ -156,32 +156,36 @@ function supportsFillsAndStrokesAndEffects(node: SceneNode):
 function replaceStyle(elem: SceneNode){
 	console.log('replaceStyles')
 
-	if( supportsFillsAndStrokesAndEffects(elem)){
-		console.log('is supported')
-		// replace fills
-		if(elem.fills === figma.mixed){
-			elem.fills = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
-			elem.fillStyleId = "";
-		} else if(elem.fills.length > 0 ){
-			elem.fills  = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
-			elem.fillStyleId = "";
-		}
-		// replace strokes
-		if(elem.strokes.length > 0 ){
-			elem.strokes = OPAQUE;
-			elem.strokeStyleId = "";
-		}
-		// remove effects
-		if(elem.effects != undefined) {
-			elem.effects = [];
-			elem.effectStyleId = "";
-		}
-	}	
+	if( !supportsFillsAndStrokesAndEffects(elem) ) return;
+	
+	
+	console.log('is supported')
+	// replace fills
+	if ( elem.fills === figma.mixed ){
+		elem.fills = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
+		elem.fillStyleId = "";
+	} else if ( elem.fills.length > 0 ){
+		elem.fills  = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
+		elem.fillStyleId = "";
+	}
+	// replace strokes
+	if ( elem.strokes.length > 0 ){
+		elem.strokes = OPAQUE;
+		elem.strokeStyleId = "";
+	}
+	// remove effects
+	if ( elem.effects != undefined ){
+		elem.effects = [];
+		elem.effectStyleId = "";
+	}
+
 }
 
 
-function removeStyle(elem: any){
+function removeStyle(elem: SceneNode){
 	console.log("rmv")
+
+	if( !supportsFillsAndStrokesAndEffects(elem) ) return;
 	
 	if(elem.fills != undefined ){
 		elem.fills = [];
