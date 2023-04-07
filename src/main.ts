@@ -66,6 +66,61 @@ const SEMITRANSPARENT: Paint[] = [{
     }
 }]
 
+
+type SupportedNode = 
+	BooleanOperationNode |
+	ComponentNode |
+	ComponentSetNode |
+	EllipseNode |
+	FrameNode |
+	InstanceNode |
+	LineNode |
+	PolygonNode |
+	RectangleNode |
+	SectionNode |
+	StarNode |
+	TextNode | 
+	VectorNode |
+	ShapeWithTextNode;
+
+
+const SUPPORTED_TYPES : NodeType[] = [
+	'BOOLEAN_OPERATION', 
+	'COMPONENT', 
+	'COMPONENT_SET', 
+	'ELLIPSE', 
+	'FRAME', 
+	'INSTANCE', 
+	'LINE', 
+	'POLYGON', 
+	'RECTANGLE',
+	'SECTION',
+	'STAR', 
+	'TEXT', 
+	'VECTOR',
+	'SHAPE_WITH_TEXT'
+];
+
+function supportedNodes(node: SceneNode):
+  node is SupportedNode
+{
+  return node.type === 'BOOLEAN_OPERATION' ||
+  node.type === 'COMPONENT' ||
+  node.type === 'COMPONENT_SET' ||
+  node.type === 'ELLIPSE' ||
+  node.type === 'FRAME' || 
+  node.type === 'INSTANCE' ||
+  node.type === 'LINE' ||
+  node.type === 'POLYGON' ||
+  node.type === 'RECTANGLE' ||
+  node.type === 'SECTION' ||
+  node.type === 'STAR' ||
+  node.type === 'TEXT' ||
+  node.type === 'VECTOR' ||
+  node.type === 'SHAPE_WITH_TEXT'
+}
+
+
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
 figma.on('run', ({ parameters }) => {
 	try {
@@ -82,24 +137,35 @@ figma.on('run', ({ parameters }) => {
 
 function startPluginWithParameters(parameters: any, command: string): string {
 
-	const sel = figma.currentPage.selection;
-	// the user must make a selection
+	// Get users selection on the canvas
+	const sel : readonly SceneNode[] = figma.currentPage.selection;
+	
+	// The user must make a selection
 	if(sel.length < 1){
 		throw new Error('👾👾👾 Please make a selection 👾👾👾')
 	}
-	
+
+	// Nodes with this string will not be touched
 	const excludedNode: string = parameters.name ? parameters.name.toLowerCase() : [];
 
-	// get all child nodes of the selection, except those matching the second user input
-	let nodes: SceneNode[] = sel.flatMap(node => getAllNestedNodes(node, excludedNode))
-
-	// if the user choose to remove styles from any layer
+		
+	// Collect all valid child nodes in 'nodes' array
+	let nodes: SupportedNode[] = sel.flatMap(node => getAllValidNestedNodes(node, excludedNode))
+	console.log(nodes)
+	// If the user choose to remove styles from any layer, add valid selected nodes to 'nodes' array
 	if(parameters.choice === "All layers in selection"){
-		const customfilter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
-		const filteredSel  = sel.filter( (node: SceneNode) => excludedNode.length === 0 ? true : customfilter(node));
+	console.log('want to remove style from all layers')
+		const filteredSel: SupportedNode[] = sel.filter( (node: SceneNode) : boolean => {
+			if(!supportedNodes(node)) return false
+			return excludedNode.length === 0 ? true : !node.name.toLowerCase().startsWith(excludedNode)
+			// return supportedNodes(node) ? !node.name.toLowerCase().startsWith(excludedNode) : false;
+			}) as SupportedNode[];
+
 		filteredSel.forEach(node => nodes.push(node))
 	}
+	console.log(nodes)
 
+	// Depending on the menue command we proceed with removing or replacing styles on all collected nodes
 	switch (command) {
 		case CMD_REMOVE_STYLES:
 			nodes.forEach(removeStyle)
@@ -113,6 +179,17 @@ function startPluginWithParameters(parameters: any, command: string): string {
 }
 
 
+function getAllValidNestedNodes (sel : SceneNode, excludedNode: string = ""): SupportedNode[]
+{
+	return ('children' in sel) ? 
+		sel.findAll( (node:SceneNode) : boolean => {
+			// If node is not of supported type eg:(SLICE), it will not be added
+			if(!supportedNodes(node)) return false
+			// Excluding nodes with names matching the user input
+			return excludedNode.length === 0 ? true : !node.name.toLowerCase().startsWith(excludedNode)
+		}) as SupportedNode[] : [];
+}
+
 function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNode[]
 {
 	const filter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
@@ -120,45 +197,13 @@ function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNo
 	return nodes;	
 };
 
-function supportsFillsAndStrokesAndEffects(node: SceneNode):
-  node is BooleanOperationNode | 
-  ComponentNode | 
-  ComponentSetNode | 
-  EllipseNode | 
-  FrameNode | 
-  InstanceNode | 
-  LineNode | 
-  PolygonNode | 
-  RectangleNode |
-  StarNode |
-  TextNode |
-  VectorNode
-  //   ShapeWithTextNode | 
+
+
+
+// need to switch to supportedNode
+function replaceStyle(elem: SupportedNode)
 {
-  return node.type === 'BOOLEAN_OPERATION' ||
-  node.type === 'COMPONENT' ||
-  node.type === 'COMPONENT_SET' ||
-  node.type === 'ELLIPSE' ||
-  node.type === 'FRAME' || 
-  node.type === 'INSTANCE' ||
-  node.type === 'LINE' ||
-  node.type === 'POLYGON' ||
-  node.type === 'RECTANGLE' ||
-  node.type === 'STAR' ||
-  node.type === 'TEXT' ||
-  node.type === 'VECTOR'
-//   node.type === 'SHAPE_WITH_TEXT' || 
-}
-
-
-
-
-function replaceStyle(elem: SceneNode){
 	console.log('replaceStyles')
-
-	if( !supportsFillsAndStrokesAndEffects(elem) ) return;
-
-	console.log('is supported')
 
 	// replace fills
 	if ( elem.fills === figma.mixed || elem.fills.length ){
@@ -166,35 +211,36 @@ function replaceStyle(elem: SceneNode){
 		elem.fillStyleId = "";
 	}
 	// replace strokes
-	if ( elem.strokes.length > 0 ){
+	if (  elem.type !== 'SECTION' && elem.strokes.length > 0 ){
 		elem.strokes = OPAQUE;
 		elem.strokeStyleId = "";
 	}
 	// remove effects
-	if ( elem.effects != undefined ){
+	if ( elem.type !== 'SECTION' && elem.type !== 'SHAPE_WITH_TEXT' && elem.effects != undefined ){
 		elem.effects = [];
 		elem.effectStyleId = "";
 	}
-
 }
 
 
-function removeStyle(elem: SceneNode){
+function removeStyle(elem: SupportedNode)
+{
 	console.log("rmv")
 
-	if( !supportsFillsAndStrokesAndEffects(elem) ) return;
-	
+	// remove fills	
 	if(elem.fills != undefined ){
 		elem.fills = [];
 		elem.fillStyleId = "";
 	}
 
-	if(elem.strokes != undefined ){
+	// remove strokes
+	if(elem.type !== 'SECTION' && elem.strokes != undefined ){
 		elem.strokes = [];
 		elem.strokeStyleId = "";
 	}
 
-	if(elem.effects != undefined) {
+	// remove effects
+	if(elem.type !== 'SECTION' && elem.type !== 'SHAPE_WITH_TEXT' && elem.effects != undefined) {
 		elem.effects = [];
 		elem.effectStyleId = "";
 	}
