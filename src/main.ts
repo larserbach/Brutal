@@ -157,15 +157,12 @@ function replaceStyle(elem: SceneNode){
 	console.log('replaceStyles')
 
 	if( !supportsFillsAndStrokesAndEffects(elem) ) return;
-	
-	
+
 	console.log('is supported')
+
 	// replace fills
-	if ( elem.fills === figma.mixed ){
+	if ( elem.fills === figma.mixed || elem.fills.length ){
 		elem.fills = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
-		elem.fillStyleId = "";
-	} else if ( elem.fills.length > 0 ){
-		elem.fills  = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
 		elem.fillStyleId = "";
 	}
 	// replace strokes
