@@ -40,33 +40,76 @@ figma.parameters.on('input', ({ key, query, result }) => {
 });
 
 
+const CMD_REMOVE_STYLES = 'removeStyles';
+const CMD_REPLACE_STYLES = 'replaceStyles';
+
+const OPAQUE: Paint[] = [{
+    "type": 'SOLID',
+    "visible": true,
+    "opacity": 1.0,
+    "blendMode": 'NORMAL',
+    "color": {
+      "r": 1.0,
+      "g": 0.0,
+      "b": 0.431
+    }
+}]
+const SEMITRANSPARENT: Paint[] = [{
+    "type": 'SOLID',
+    "visible": true,
+    "opacity": 0.10,
+    "blendMode": 'NORMAL',
+    "color": {
+		"r": 1.0,
+		"g": 0.0,
+		"b": 0.431
+    }
+}]
 
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
 figma.on('run', ({ parameters }) => {
-	startPluginWithParameters(parameters!);
+	try {
+		const result = startPluginWithParameters(parameters!, figma.command);
+		figma.closePlugin(result);
+	} catch (error:any) {
+		console.error(`${error.name} ${error.message}`)
+		figma.closePlugin(error.message)
+	}
+	
 });
   
 
-function startPluginWithParameters(parameters: any) {
+
+function startPluginWithParameters(parameters: any, command: string): string {
 
 	const sel = figma.currentPage.selection;
 	// the user must make a selection
-	if(sel.length > 0){
-		const excludedNode: string = parameters.name ? parameters.name.toLowerCase() : [];
-
-		// get all child nodes of the selection, except those matching the second user input
-		const nodes =  sel.flatMap(node => getAllNestedNodes(node, excludedNode))
-		nodes.forEach(removeStyle)
-
-		// if the user choose to remove styles from any layer
-		if(parameters.choice === "All layers in selection"){
-			const customfilter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
-			const filteredSel  = sel.filter( (node: SceneNode) => excludedNode.length === 0 ? true : customfilter(node));
-			filteredSel.forEach(node => removeStyle(node))
-		}
+	if(sel.length < 1){
+		throw new Error('👾👾👾 Please make a selection 👾👾👾')
 	}
-	const message = sel.length > 0 ? "👻 Styles removed" : "👾 Please make a selection"
-	figma.closePlugin(message);
+	
+	const excludedNode: string = parameters.name ? parameters.name.toLowerCase() : [];
+
+	// get all child nodes of the selection, except those matching the second user input
+	let nodes: SceneNode[] = sel.flatMap(node => getAllNestedNodes(node, excludedNode))
+
+	// if the user choose to remove styles from any layer
+	if(parameters.choice === "All layers in selection"){
+		const customfilter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
+		const filteredSel  = sel.filter( (node: SceneNode) => excludedNode.length === 0 ? true : customfilter(node));
+		filteredSel.forEach(node => nodes.push(node))
+	}
+
+	switch (command) {
+		case CMD_REMOVE_STYLES:
+			nodes.forEach(removeStyle)
+			return "👻 Styles removed"
+		case CMD_REPLACE_STYLES:
+			nodes.forEach(replaceStyle)		
+			return "✨ Layers got a new paintjob"
+		default:
+			throw new Error('Plugin started with unknown command: ' + JSON.stringify(command))
+	}
 }
 
 
@@ -77,8 +120,68 @@ function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNo
 	return nodes;	
 };
 
+function supportsFillsAndStrokesAndEffects(node: SceneNode):
+  node is BooleanOperationNode | 
+  ComponentNode | 
+  ComponentSetNode | 
+  EllipseNode | 
+  FrameNode | 
+  InstanceNode | 
+  LineNode | 
+  PolygonNode | 
+  RectangleNode |
+  StarNode |
+  TextNode |
+  VectorNode
+  //   ShapeWithTextNode | 
+{
+  return node.type === 'BOOLEAN_OPERATION' ||
+  node.type === 'COMPONENT' ||
+  node.type === 'COMPONENT_SET' ||
+  node.type === 'ELLIPSE' ||
+  node.type === 'FRAME' || 
+  node.type === 'INSTANCE' ||
+  node.type === 'LINE' ||
+  node.type === 'POLYGON' ||
+  node.type === 'RECTANGLE' ||
+  node.type === 'STAR' ||
+  node.type === 'TEXT' ||
+  node.type === 'VECTOR'
+//   node.type === 'SHAPE_WITH_TEXT' || 
+}
+
+
+
+
+function replaceStyle(elem: SceneNode){
+	console.log('replaceStyles')
+
+	if( supportsFillsAndStrokesAndEffects(elem)){
+		console.log('is supported')
+		// replace fills
+		if(elem.fills === figma.mixed){
+			elem.fills = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
+			elem.fillStyleId = "";
+		} else if(elem.fills.length > 0 ){
+			elem.fills  = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
+			elem.fillStyleId = "";
+		}
+		// replace strokes
+		if(elem.strokes.length > 0 ){
+			elem.strokes = OPAQUE;
+			elem.strokeStyleId = "";
+		}
+		// remove effects
+		if(elem.effects != undefined) {
+			elem.effects = [];
+			elem.effectStyleId = "";
+		}
+	}	
+}
+
 
 function removeStyle(elem: any){
+	console.log("rmv")
 	
 	if(elem.fills != undefined ){
 		elem.fills = [];

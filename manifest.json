@@ -8,18 +8,42 @@
   "editorType": [
     "figma"
   ],
-  "parameters": [
+  "menu": [
     {
-      "name": "Remove styles from",
-      "key": "choice",
-      "description": "Remove styles from from:"
+      "name" : "Remove styles",
+      "command": "removeStyles",
+      "parameters": [
+        {
+          "name": "Remove styles from",
+          "key": "choice",
+          "description": "Remove styles from:"
+        },
+        {
+          "name": "Preserve layers",
+          "key": "name",
+          "description": "Don't touch layers with names starting with:",
+          "allowFreeform": true,
+          "optional": true
+        }
+      ]
     },
     {
-      "name": "Preserve layers",
-      "key": "name",
-      "description": "Don't touch layers with names starting with:",
-      "allowFreeform": true,
-      "optional": true
+      "name" : "Replace styles",
+      "command": "replaceStyles",
+      "parameters": [
+        {
+          "name": "Replace styles on",
+          "key": "choice",
+          "description": "Replace styles on:"
+        },
+        {
+          "name": "Preserve layers",
+          "key": "name",
+          "description": "Don't touch layers with names starting with:",
+          "allowFreeform": true,
+          "optional": true
+        }
+      ]
     }
   ]
 }
