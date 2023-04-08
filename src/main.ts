@@ -1,4 +1,77 @@
 
+// Type handling
+
+type SupportedNode = 
+BooleanOperationNode |
+ComponentNode |
+ComponentSetNode |
+EllipseNode |
+FrameNode |
+InstanceNode |
+LineNode |
+PolygonNode |
+RectangleNode |
+SectionNode |
+StarNode |
+TextNode | 
+VectorNode |
+ShapeWithTextNode;
+
+const SUPPORTED_TYPES : NodeType[] = [
+'BOOLEAN_OPERATION', 
+'COMPONENT', 
+'COMPONENT_SET', 
+'ELLIPSE', 
+'FRAME', 
+'INSTANCE', 
+'LINE', 
+'POLYGON', 
+'RECTANGLE',
+'SECTION',
+'STAR', 
+'TEXT', 
+'VECTOR',
+'SHAPE_WITH_TEXT'
+];
+
+function supportedNodes(node: SceneNode): node is SupportedNode {
+	return SUPPORTED_TYPES.includes(node.type);
+}
+
+// Menu Commands
+const CMD_REMOVE_STYLES = 'removeStyles';
+const CMD_REPLACE_STYLES = 'replaceStyles';
+
+// Colors
+const OPAQUE: Paint[] = [{
+    "type": 'SOLID',
+    "visible": true,
+    "opacity": 1.0,
+    "blendMode": 'NORMAL',
+    "color": {
+      "r": 1.0,
+      "g": 0.0,
+      "b": 0.431
+    }
+}]
+const SEMITRANSPARENT: Paint[] = [{
+    "type": 'SOLID',
+    "visible": true,
+    "opacity": 0.10,
+    "blendMode": 'NORMAL',
+    "color": {
+		"r": 1.0,
+		"g": 0.0,
+		"b": 0.431
+    }
+}]
+
+
+/* # # # # # # # # # # # #*/
+/* # # # CONTROLERS # # # */
+/* # # # # # # # # # # # #*/
+
+
 // The 'input' event listens for text change in the Quick Actions box after a plugin is 'Tabbed' into.
 figma.parameters.on('input', ({ key, query, result }) => {
 	switch (key) {
@@ -40,87 +113,6 @@ figma.parameters.on('input', ({ key, query, result }) => {
 });
 
 
-const CMD_REMOVE_STYLES = 'removeStyles';
-const CMD_REPLACE_STYLES = 'replaceStyles';
-
-const OPAQUE: Paint[] = [{
-    "type": 'SOLID',
-    "visible": true,
-    "opacity": 1.0,
-    "blendMode": 'NORMAL',
-    "color": {
-      "r": 1.0,
-      "g": 0.0,
-      "b": 0.431
-    }
-}]
-const SEMITRANSPARENT: Paint[] = [{
-    "type": 'SOLID',
-    "visible": true,
-    "opacity": 0.10,
-    "blendMode": 'NORMAL',
-    "color": {
-		"r": 1.0,
-		"g": 0.0,
-		"b": 0.431
-    }
-}]
-
-
-type SupportedNode = 
-	BooleanOperationNode |
-	ComponentNode |
-	ComponentSetNode |
-	EllipseNode |
-	FrameNode |
-	InstanceNode |
-	LineNode |
-	PolygonNode |
-	RectangleNode |
-	SectionNode |
-	StarNode |
-	TextNode | 
-	VectorNode |
-	ShapeWithTextNode;
-
-
-const SUPPORTED_TYPES : NodeType[] = [
-	'BOOLEAN_OPERATION', 
-	'COMPONENT', 
-	'COMPONENT_SET', 
-	'ELLIPSE', 
-	'FRAME', 
-	'INSTANCE', 
-	'LINE', 
-	'POLYGON', 
-	'RECTANGLE',
-	'SECTION',
-	'STAR', 
-	'TEXT', 
-	'VECTOR',
-	'SHAPE_WITH_TEXT'
-];
-
-function supportedNodes(node: SceneNode):
-  node is SupportedNode
-{
-  return node.type === 'BOOLEAN_OPERATION' ||
-  node.type === 'COMPONENT' ||
-  node.type === 'COMPONENT_SET' ||
-  node.type === 'ELLIPSE' ||
-  node.type === 'FRAME' || 
-  node.type === 'INSTANCE' ||
-  node.type === 'LINE' ||
-  node.type === 'POLYGON' ||
-  node.type === 'RECTANGLE' ||
-  node.type === 'SECTION' ||
-  node.type === 'STAR' ||
-  node.type === 'TEXT' ||
-  node.type === 'VECTOR' ||
-  node.type === 'SHAPE_WITH_TEXT'
-}
-
-
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
 figma.on('run', ({ parameters }) => {
 	try {
@@ -130,11 +122,10 @@ figma.on('run', ({ parameters }) => {
 		console.error(`${error.name} ${error.message}`)
 		figma.closePlugin(error.message)
 	}
-	
 });
   
 
-
+// Manages Logic depending on user input, returns messages when everything is don
 function startPluginWithParameters(parameters: any, command: string): string {
 
 	// Get users selection on the canvas
@@ -151,10 +142,10 @@ function startPluginWithParameters(parameters: any, command: string): string {
 		
 	// Collect all valid child nodes in 'nodes' array
 	let nodes: SupportedNode[] = sel.flatMap(node => getAllValidNestedNodes(node, excludedNode))
-	console.log(nodes)
+	
 	// If the user choose to remove styles from any layer, add valid selected nodes to 'nodes' array
 	if(parameters.choice === "All layers in selection"){
-	console.log('want to remove style from all layers')
+	
 		const filteredSel: SupportedNode[] = sel.filter( (node: SceneNode) : boolean => {
 			if(!supportedNodes(node)) return false
 			return excludedNode.length === 0 ? true : !node.name.toLowerCase().startsWith(excludedNode)
@@ -163,7 +154,6 @@ function startPluginWithParameters(parameters: any, command: string): string {
 
 		filteredSel.forEach(node => nodes.push(node))
 	}
-	console.log(nodes)
 
 	// Depending on the menue command we proceed with removing or replacing styles on all collected nodes
 	switch (command) {
@@ -178,7 +168,12 @@ function startPluginWithParameters(parameters: any, command: string): string {
 	}
 }
 
+/* # # # # # # # # # # # #*/
+/* # # # FUNCTIONS # # # #*/
+/* # # # # # # # # # # # #*/
 
+
+// Returns childnodes of any node passed in to it. Children get filtered by type and name
 function getAllValidNestedNodes (sel : SceneNode, excludedNode: string = ""): SupportedNode[]
 {
 	return ('children' in sel) ? 
@@ -190,6 +185,7 @@ function getAllValidNestedNodes (sel : SceneNode, excludedNode: string = ""): Su
 		}) as SupportedNode[] : [];
 }
 
+// Should try to get rid of this function
 function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNode[]
 {
 	const filter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
@@ -198,9 +194,7 @@ function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNo
 };
 
 
-
-
-// need to switch to supportedNode
+// Replaces fills and strokes of single node with prediefined colors SEMITRANSPARENT / OPAQUE
 function replaceStyle(elem: SupportedNode)
 {
 	console.log('replaceStyles')
@@ -223,6 +217,7 @@ function replaceStyle(elem: SupportedNode)
 }
 
 
+// Removes fills, effects and strokes of single node
 function removeStyle(elem: SupportedNode)
 {
 	console.log("rmv")
