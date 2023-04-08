@@ -1,5 +1,7 @@
 
 // Type handling
+// Supported Nodes include any Figma relevant node which supports strokes, fill or effects
+// SectionNodes seem to be a bit special, currently they seem not to support stokes
 
 type SupportedNode = 
 BooleanOperationNode |
@@ -85,14 +87,20 @@ figma.parameters.on('input', ({ key, query, result }) => {
 		case 'name':
 			// providing the option to preserve styles on named layers
 
-			const sel = figma.currentPage.selection;
+			// Get users selection on the canvas
+			const sel : readonly SceneNode[] = figma.currentPage.selection;
 
-			const customfilter = (node: SceneNode) => node.name.toLowerCase().startsWith(query.toLowerCase());
 
-			let nodes: SceneNode[] = query.length > 0 ? sel.flatMap(node => getAllNestedNodes(node).concat(node))
-				.filter(node => node.name != null && customfilter(node)) : [];
+			// Get valid nodes with names matching query
+			let nodes : SupportedNode[] = 
+			( query.length > 0) ? (() => {
+				const childNodes: SupportedNode[] = sel.flatMap( (node: SceneNode) => getAllValidNestedNodes(node))
+				const filteredSel: SupportedNode[] = sel.filter( (node: SceneNode) => supportedNodes(node)) as SupportedNode[];
+				const customfilter = (node: SceneNode) => node.name.toLowerCase().startsWith(query.toLowerCase());
+				return childNodes.concat(filteredSel).filter(node => node.name != null && customfilter(node))
+			})() : [];
 
-			// filter out SceneNodes with duplicate names
+			// Filter out nodes with duplicate names
 			nodes = nodes.filter((value, index, self) =>
 				index === self.findIndex((t) => (
 				  t.name === value.name
@@ -115,6 +123,7 @@ figma.parameters.on('input', ({ key, query, result }) => {
 
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
 figma.on('run', ({ parameters }) => {
+	console.log(parameters)
 	try {
 		const result = startPluginWithParameters(parameters!, figma.command);
 		figma.closePlugin(result);
@@ -149,7 +158,6 @@ function startPluginWithParameters(parameters: any, command: string): string {
 		const filteredSel: SupportedNode[] = sel.filter( (node: SceneNode) : boolean => {
 			if(!supportedNodes(node)) return false
 			return excludedNode.length === 0 ? true : !node.name.toLowerCase().startsWith(excludedNode)
-			// return supportedNodes(node) ? !node.name.toLowerCase().startsWith(excludedNode) : false;
 			}) as SupportedNode[];
 
 		filteredSel.forEach(node => nodes.push(node))
@@ -184,15 +192,6 @@ function getAllValidNestedNodes (sel : SceneNode, excludedNode: string = ""): Su
 			return excludedNode.length === 0 ? true : !node.name.toLowerCase().startsWith(excludedNode)
 		}) as SupportedNode[] : [];
 }
-
-// Should try to get rid of this function
-function getAllNestedNodes (sel : SceneNode, excludedNode: string = ""): SceneNode[]
-{
-	const filter = (node: any) => !node.name.toLowerCase().startsWith(excludedNode);
-	const nodes  = ('children' in sel) ? (sel.findAll( (node: SceneNode) => excludedNode.length === 0 ? true : filter(node))) : [];
-	return nodes;	
-};
-
 
 // Replaces fills and strokes of single node with prediefined colors SEMITRANSPARENT / OPAQUE
 function replaceStyle(elem: SupportedNode)
