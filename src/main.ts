@@ -75,50 +75,74 @@ const SEMITRANSPARENT: Paint[] = [{
 
 
 // The 'input' event listens for text change in the Quick Actions box after a plugin is 'Tabbed' into.
-figma.parameters.on('input', ({ key, query, result }) => {
-	switch (key) {
-		case 'choice':
-			// the user must choose if he want's to remove only nested layers
-			const choices = ["All layers in selection", "Only nested layers in selection"]
-			const suggestions = choices.filter(s => s.includes(query));
-			result.setSuggestions(suggestions);
-		break;
+figma.parameters.on(
+	'input', 
+	({ key, query, result }: ParameterInputEvent) => {
+		console.clear();
+		switch (key) {
+			case 'choice':
+				// the user must choose if he want's to remove only nested layers
+				const choices = ["All layers in selection", "Only nested layers in selection"]
+				const suggestions = choices.filter(s => s.includes(query));
+				result.setSuggestions(suggestions);
+			break;
 
-		case 'name':
+			case 'name':
 			// providing the option to preserve styles on named layers
-
-			// Get users selection on the canvas
-			const sel : readonly SceneNode[] = figma.currentPage.selection;
-
-
-			// Get valid nodes with names matching query
-			let nodes : SupportedNode[] = 
-			( query.length > 0) ? (() => {
-				const childNodes: SupportedNode[] = sel.flatMap( (node: SceneNode) => getAllValidNestedNodes(node))
-				const filteredSel: SupportedNode[] = sel.filter( (node: SceneNode) => supportedNodes(node)) as SupportedNode[];
-				const customfilter = (node: SceneNode) => node.name.toLowerCase().startsWith(query.toLowerCase());
-				return childNodes.concat(filteredSel).filter(node => node.name != null && customfilter(node))
-			})() : [];
-
-			// Filter out nodes with duplicate names
-			nodes = nodes.filter((value, index, self) =>
-				index === self.findIndex((t) => (
-				  t.name === value.name
-				))
-			)
-
-			const formattedNodes = nodes.map((node:any) => {
-				const name = node.name;
-				return ({ name, data:  node.name} );
-			});
-
-			const namesuggestions = [...formattedNodes];
+	
+			const namesuggestions = listExcludableNodes(query);
 			result.setSuggestions(namesuggestions);
-		break;
-		default:
+				
+			break;
+
+			default:
 			return;
-	}
+		}
 });
+
+function listExcludableNodes(query: string): any {
+
+	
+	const sel : readonly SceneNode[] = figma.currentPage.selection;
+	
+	const customfilter = (node: SceneNode) =>  query.length === 0 ? true : node.name.toLowerCase().startsWith(query.toLowerCase());
+	
+	let namesSet: Set<string> = new Set()
+	
+	const filteredChildNodes = (node : SceneNode) : SceneNode[] =>
+	{
+		return ('children' in node) ? 
+			node.findAll( (child:SceneNode) : boolean => {
+				// If node is not of supported type eg:(SLICE), it will not be added
+				if(!supportedNodes(child)) return false
+				// Only nodes with names matching the user input
+				return child.name != null && customfilter(child);
+			}) : [];
+	}
+
+	const filteredSelection = (nodes: readonly SceneNode[]) : SceneNode [] => 
+	{
+		return nodes.filter( (node: SceneNode) => 
+			supportedNodes(node)).
+			filter(node => node.name != null && customfilter(node))
+	}
+
+	
+	sel.flatMap((selectedNode) => filteredChildNodes(selectedNode).forEach(node => {namesSet.add(node.name)}));
+	
+	filteredSelection(sel).forEach((node: SceneNode) => namesSet.add(node.name))
+	
+	
+	console.log(namesSet.size)
+	
+	for (const item of namesSet) {
+		console.log(item);
+	}
+	
+	const formattedNodes = Array.from(namesSet, (name) => ({ name, data: name }));
+	const namesuggestions = [...formattedNodes];
+	return namesuggestions
+}
 
 
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
@@ -134,7 +158,7 @@ figma.on('run', ({ parameters }) => {
 });
   
 
-// Manages Logic depending on user input, returns messages when everything is don
+// Manages logic depending on user input, returns messages when everything is done
 function startPluginWithParameters(parameters: any, command: string): string {
 
 	// Get users selection on the canvas
@@ -196,20 +220,27 @@ function getAllValidNestedNodes (sel : SceneNode, excludedNode: string = ""): Su
 // Replaces fills and strokes of single node with prediefined colors SEMITRANSPARENT / OPAQUE
 function replaceStyle(elem: SupportedNode)
 {
-	console.log('replaceStyles')
 
 	// replace fills
 	if ( elem.fills === figma.mixed || elem.fills.length ){
 		elem.fills = elem.type === 'TEXT' ? OPAQUE : SEMITRANSPARENT;
 		elem.fillStyleId = "";
 	}
+
+	// guard
+	if (elem.type === 'SECTION') return;
+
 	// replace strokes
-	if (  elem.type !== 'SECTION' && elem.strokes.length > 0 ){
+	if (elem.strokes.length > 0 ){
 		elem.strokes = OPAQUE;
 		elem.strokeStyleId = "";
 	}
+
+	// guard
+	if (elem.type === 'SHAPE_WITH_TEXT') return;
+
 	// remove effects
-	if ( elem.type !== 'SECTION' && elem.type !== 'SHAPE_WITH_TEXT' && elem.effects != undefined ){
+	if (elem.effects != undefined ){
 		elem.effects = [];
 		elem.effectStyleId = "";
 	}
@@ -219,22 +250,26 @@ function replaceStyle(elem: SupportedNode)
 // Removes fills, effects and strokes of single node
 function removeStyle(elem: SupportedNode)
 {
-	console.log("rmv")
-
 	// remove fills	
 	if(elem.fills != undefined ){
 		elem.fills = [];
 		elem.fillStyleId = "";
 	}
 
+	// guard
+	if (elem.type === 'SECTION') return; 
+
 	// remove strokes
-	if(elem.type !== 'SECTION' && elem.strokes != undefined ){
+	if(elem.strokes !== undefined ){
 		elem.strokes = [];
 		elem.strokeStyleId = "";
 	}
+	
+	// guard
+	if (elem.type === 'SHAPE_WITH_TEXT') return; 
 
 	// remove effects
-	if(elem.type !== 'SECTION' && elem.type !== 'SHAPE_WITH_TEXT' && elem.effects != undefined) {
+	if(elem.effects !== undefined) {
 		elem.effects = [];
 		elem.effectStyleId = "";
 	}
