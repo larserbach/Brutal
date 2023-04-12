@@ -256,7 +256,7 @@ function setValidNodesRecursively(
   });
 }
 
-// Replaces fills and strokes of single node with prediefined colors SEMITRANSPARENT / OPAQUE
+// Replaces fills and strokes of single node with predefined colors SEMITRANSPARENT / OPAQUE
 function replaceStyle(elem: SupportedNode) {
   // replace fills
   if (elem.fills === figma.mixed || elem.fills.length) {
