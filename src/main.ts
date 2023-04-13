@@ -136,7 +136,7 @@ function listExcludableNodes(query: string): any {
   // Worker function to get all supported nodes in selection
   const filteredSelection = (nodes: readonly SceneNode[]): SceneNode[] => {
     return nodes
-      .filter((node: SceneNode) => supportedNodes(node))
+      // .filter((node: SceneNode) => supportedNodes(node))
       .filter((node) => node.name != null && inputfilter(node));
   };
 
@@ -161,7 +161,6 @@ figma.on("run", ({ parameters }) => {
     const result = startPluginWithParameters(parameters!, figma.command);
     figma.closePlugin(result);
   } catch (error: any) {
-    console.error(`${error.name} ${error.message}`);
     figma.closePlugin(error.message);
   }
 });
@@ -190,7 +189,6 @@ function startPluginWithParameters(parameters: any, command: string): string {
   // setting validNodes
   if (parameters.choice === PARAM_All_LAYERS_FALSE) {
     sel.forEach((node) => {
-      if (!supportedNodes(node)) return;
 
       if (
         preservedNode.length === 0
@@ -204,10 +202,12 @@ function startPluginWithParameters(parameters: any, command: string): string {
       }
     });
   } else if (parameters.choice === PARAM_All_LAYERS_TRUE) {
+    console.log('all layers true')
     setValidNodesRecursively(sel, preservedNode, preserveChildren);
   } else {
     throw new Error("some issue with parameters.choice");
   }
+
 
   // getting validNodes
   const nodes = validNodes as SupportedNode[];
@@ -241,17 +241,26 @@ function setValidNodesRecursively(
       preservedNode.length === 0
         ? false
         : node.name.toLowerCase().startsWith(preservedNode);
+    
+    console.log(node.name)
 
-    if (!isExcluded && supportedNodes(node)) {
-      validNodes.push(node);
+    if (!isExcluded) {
+      console.log('is not excluded')
+
+      if(supportedNodes(node)) validNodes.push(node);
+      
       if ("children" in node)
         setValidNodesRecursively(
           node.children,
           preservedNode,
           preserveChildren
         );
-    } else if (isExcluded && !preserveChildren && "children" in node) {
-      setValidNodesRecursively(node.children, preservedNode, preserveChildren);
+    }
+    if(isExcluded){
+      console.log('is excluded')
+      if (!preserveChildren && "children" in node) {
+        setValidNodesRecursively(node.children, preservedNode, preserveChildren);
+      }
     }
   });
 }
