@@ -1,6 +1,7 @@
 {
   "name": "Brutal",
   "id": "1215386279132052346",
+  "networkAccess": { "allowedDomains": ["none"] },
   "api": "1.0.0",
   "main": "dist/main.js",
   "capabilities": [],
@@ -8,54 +9,30 @@
   "editorType": [
     "figma"
   ],
-  "menu": [
+  
+  "parameters": [
     {
-      "name" : "Remove styles",
-      "command": "removeStyles",
-      "parameters": [
-        {
-          "name": "Remove styles from",
-          "key": "choice",
-          "description": "Remove styles from:"
-        },
-        {
-          "name": "Preserve layers",
-          "key": "name",
-          "description": "Don't touch layers with names starting with:",
-          "allowFreeform": true,
-          "optional": true
-        },
-        {
-          "name": "Preserve nested layers",
-          "key": "preserveChildren",
-          "description": "Preserve nested layers?",
-          "optional": true
-        }
-      ]
+      "name": "Brutal action",
+      "key": "actionChoice",
+      "description": "Choose an action"
     },
     {
-      "name" : "Replace styles",
-      "command": "replaceStyles",
-      "parameters": [
-        {
-          "name": "Replace styles on",
-          "key": "choice",
-          "description": "Replace styles on:"
-        },
-        {
-          "name": "Preserve layers",
-          "key": "name",
-          "description": "Don't touch layers with names starting with:",
-          "allowFreeform": true,
-          "optional": true
-        },
-        {
-          "name": "Preserve nested layers",
-          "key": "preserveChildren",
-          "description": "Preserve nested layers?",
-          "optional": true
-        }
-      ]
+      "name": "Remove styles from",
+      "key": "nestedLayerChoice",
+      "description": "Remove styles from:"
+    },
+    {
+      "name": "Preserve layers",
+      "key": "layerName",
+      "description": "Don't touch layers with names starting with:",
+      "allowFreeform": true,
+      "optional": true
+    },
+    {
+      "name": "Preserve nested layers",
+      "key": "preserveChildren",
+      "description": "Preserve nested layers?",
+      "optional": true
     }
   ]
 }
