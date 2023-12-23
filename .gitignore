@@ -6,3 +6,5 @@ node_modules
 out/
 dist/
 code.js
+private_mixpanelToken.*
+.DS_Strore
