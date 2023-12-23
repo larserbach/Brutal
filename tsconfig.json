@@ -8,8 +8,7 @@
       "./node_modules/@types",
       "./node_modules/@figma"
     ],
-    "outDir": "./dist",
-    "jsx": "react",
+
     "allowJs": true,
   },
   "include": ["src/**/*.ts"]

@@ -19,9 +19,9 @@ window.onmessage = async (event) => {
   }
 
   if (message.type === "track") {
-    await mixpanel.track(message.data);
+    await mixpanel.track(message.data.track);
     parent.postMessage(
-      { pluginMessage: { type: "track-done", val: true } },
+      { pluginMessage: { type: "track-done", data: message.data.msg } },
       "*"
     );
   }

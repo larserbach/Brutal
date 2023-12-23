@@ -43,21 +43,22 @@ function supportedNodes(node: SceneNode): node is SupportedNode {
 const CMD_REMOVE_STYLES = "removeStyles";
 const CMD_REPLACE_STYLES = "replaceStyles";
 // Parameter Suggestions - key: actionChoice
-const PARAM_REMOVE_ALL_COLORS = "Remove All (Styles, variables and custom colors)"
-const PARAM_REMOVE_COLOR_STYLES = "Remove styles from selected layers"
-const PARAM_REMOVE_COLOR_VARIABLES = "Remove variables from selected layers"
-const PARAM_REMOVE_CUSTOM_COLORS = "Remove custom colors from selected layers"
-const PARAM_DETACH_COLOR_STYLES = "Detach styles on selected layers"
-const PARAM_DETACH_COLOR_VARIABLES = "Detach variables on selected layers"
+const PARAM_REMOVE_ALL_COLORS =
+  "Remove All (Styles, variables and custom colors)";
+const PARAM_REMOVE_COLOR_STYLES = "Remove styles from selected layers";
+const PARAM_REMOVE_COLOR_VARIABLES = "Remove variables from selected layers";
+const PARAM_REMOVE_CUSTOM_COLORS = "Remove custom colors from selected layers";
+const PARAM_DETACH_COLOR_STYLES = "Detach styles on selected layers";
+const PARAM_DETACH_COLOR_VARIABLES = "Detach variables on selected layers";
 // const PARAM_REPLACE_COLOR_STYLES = "Replace styles with custom color"
 // const PARAM_REPLACE_COLOR_VARIABLES = "Replace variables with custom color"
 // const PARAM_REPLACE_CUSTOM_COLORS = "Replace custom colors with custom color"
-const PARAM_REPLACE_ALL_COLORS = "Replace styles, variables and custom colors"
+const PARAM_REPLACE_ALL_COLORS = "Replace styles, variables and custom colors";
 // Parameter Suggestions - key: typeChoice
-const PARAM_TYPE_FILLS = "Layer fills"
-const PARAM_TYPE_STROKES = "Layer strokes"
-const PARAM_TYPE_EFFECTS = "Layer effects"
-const PARAM_TYPE_ANY = "All (Layer fills, strokes and effects)"
+const PARAM_TYPE_FILLS = "Layer fills";
+const PARAM_TYPE_STROKES = "Layer strokes";
+const PARAM_TYPE_EFFECTS = "Layer effects";
+const PARAM_TYPE_ANY = "All (Layer fills, strokes and effects)";
 // Parameter Suggestions - key: nestedLayerChoice
 const PARAM_All_LAYERS_TRUE = "All layers in current selection";
 const PARAM_All_LAYERS_FALSE = "Only nested layers in current selection";
@@ -76,8 +77,8 @@ const OPAQUE: SolidPaint = {
     g: 0.0,
     b: 0.431,
   },
-  boundVariables: {}
-}
+  boundVariables: {},
+};
 
 const SEMITRANSPARENT: SolidPaint = {
   type: "SOLID",
@@ -89,27 +90,67 @@ const SEMITRANSPARENT: SolidPaint = {
     g: 0.0,
     b: 0.431,
   },
-  boundVariables: {}
-}
+  boundVariables: {},
+};
+
+/* # # # # # # # # # # # #*/
+/* # USER IDENTIFICATION  */
+/* # # # # # # # # # # # #*/
+
+const getUserId = async () => {
+  let userId = Date.now();
+
+  try {
+    const id = await figma.clientStorage.getAsync("userId");
+
+    if (typeof id === "undefined") {
+      figma.clientStorage.setAsync("userId", userId);
+    } else {
+      userId = id;
+    }
+  } catch (e) {
+    console.error("userId retrieving error", e);
+    figma.clientStorage.setAsync("userId", userId);
+  }
+  return userId;
+};
+
+const userIdentifacation = new Promise<boolean>(async (resolve, reject) => {
+  console.log("  awaiting userID");
+  const userId = await getUserId();
+  console.log(`  got userId ${userId}`);
+  figma.ui.postMessage({ type: "identify", userId });
+  console.log("promise resolved");
+  resolve(true);
+});
+
+// This shows the HTML page in "ui.html".
+figma.showUI(__html__, { visible: false });
+
+figma.ui.onmessage = (msg) => {
+  console.log("Got message from ui:");
+  if (msg.type === "track-done") {
+    console.log("  track is done");
+    figma.closePlugin(msg.data);
+  } else if (msg.type === "initialized") {
+    console.log("  mixpanel is initialized");
+  }
+};
 
 /* # # # # # # # # # # # #*/
 /* # # # CONTROLERS # # # */
 /* # # # # # # # # # # # #*/
 
 // The 'input' event listens for text change in the Quick Actions box after a plugin is 'Tabbed' into.
-
-var replaceFlag = false
 figma.parameters.on("input", ({ key, query, result }: ParameterInputEvent) => {
-
   // The user must make a selection
   const sel: readonly SceneNode[] = figma.currentPage.selection;
   if (sel.length < 1) {
-    throw new Error("You need to select at lease one layer.");
+    throw new Error("You need to select at least one layer.");
   }
-  
+
   switch (key) {
     case "actionChoice":
-      
       const actionChoiceOptions = [
         PARAM_REMOVE_ALL_COLORS,
         PARAM_REMOVE_COLOR_STYLES,
@@ -117,34 +158,30 @@ figma.parameters.on("input", ({ key, query, result }: ParameterInputEvent) => {
         PARAM_REMOVE_CUSTOM_COLORS,
         PARAM_DETACH_COLOR_STYLES,
         PARAM_DETACH_COLOR_VARIABLES,
-        PARAM_REPLACE_ALL_COLORS
-      ]
-      const actionChoiceSuggestions = actionChoiceOptions.filter((s) => 
+        PARAM_REPLACE_ALL_COLORS,
+      ];
+      const actionChoiceSuggestions = actionChoiceOptions.filter((s) =>
         s.toLowerCase().includes(query.toLowerCase())
-      )
+      );
       result.setSuggestions(actionChoiceSuggestions);
-    break
+      break;
 
     case "nestedLayerChoice":
-      
       // the user must choose if he want's to remove only nested layers
       const nestedLayerChoiceOptions = [
-        PARAM_All_LAYERS_TRUE, 
-        PARAM_All_LAYERS_FALSE
-      ]
-      const nestedLayerChoiceSuggestions = nestedLayerChoiceOptions.filter((s) => 
-        s.includes(query)
-      )
+        PARAM_All_LAYERS_TRUE,
+        PARAM_All_LAYERS_FALSE,
+      ];
+      const nestedLayerChoiceSuggestions = nestedLayerChoiceOptions.filter(
+        (s) => s.includes(query)
+      );
       result.setSuggestions(nestedLayerChoiceSuggestions);
-    break
-
+      break;
 
     case "layerName":
-      
       const layerNameSuggestions = listExcludableNodes(query);
       result.setSuggestions(layerNameSuggestions);
-    break;
-
+      break;
 
     case "preserveChildren":
       const includeChildrenOptions = [
@@ -163,7 +200,6 @@ figma.parameters.on("input", ({ key, query, result }: ParameterInputEvent) => {
 });
 
 function listExcludableNodes(query: string): any {
-  
   // users selection
   const sel: readonly SceneNode[] = figma.currentPage.selection;
   // the filter
@@ -186,9 +222,11 @@ function listExcludableNodes(query: string): any {
   };
   // Worker function to get all supported nodes in selection
   const filteredSelection = (nodes: readonly SceneNode[]): SceneNode[] => {
-    return nodes
-      // .filter((node: SceneNode) => supportedNodes(node))
-      .filter((node) => node.name != null && inputfilter(node));
+    return (
+      nodes
+        // .filter((node: SceneNode) => supportedNodes(node))
+        .filter((node) => node.name != null && inputfilter(node))
+    );
   };
 
   // add names of valid child nodes to namesSet
@@ -204,24 +242,31 @@ function listExcludableNodes(query: string): any {
   const formattedNodes = Array.from(namesSet, (name) => ({ name, data: name }));
   const namesuggestions = [...formattedNodes];
   return namesuggestions;
-
 }
 
-
-
-
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
-figma.on("run", ({ parameters }) => {
+figma.on("run", async ({ parameters }) => {
   try {
+    // the usual
     const result = startPluginWithParameters(parameters!, figma.command);
-    figma.closePlugin(result);
+    // figma.closePlugin(result);
+
+    //analytics
+    userIdentifacation
+      .then(() => {
+        console.log("is identified");
+        figma.ui.postMessage({
+          type: "track",
+          data: { track: parameters?.actionChoice, msg: result },
+        });
+      })
+      .catch((err: any) => {
+        console.error(err);
+      });
   } catch (error: any) {
     figma.closePlugin(error.message);
   }
 });
-
-
-
 
 let validNodes: SupportedNode[] = [];
 
@@ -247,7 +292,6 @@ function startPluginWithParameters(parameters: any, command: string): any {
   // setting validNodes
   if (parameters.nestedLayerChoice === PARAM_All_LAYERS_FALSE) {
     sel.forEach((node) => {
-
       if (
         preservedNode.length === 0
           ? true
@@ -260,72 +304,72 @@ function startPluginWithParameters(parameters: any, command: string): any {
       }
     });
   } else if (parameters.nestedLayerChoice === PARAM_All_LAYERS_TRUE) {
-    
     setValidNodesRecursively(sel, preservedNode, preserveChildren);
   } else {
-    throw new Error("some issue with parameters.nestedLayerChoice");
+    throw new Error("Some issue with parameters.nestedLayerChoice");
   }
 
-
-  switch (parameters.actionChoice) {    
-    case(PARAM_REMOVE_COLOR_STYLES):
-      validNodes.forEach( node => {
-        removeStyleOnNodesFills(node) 
-        removeStyleOnNodesStrokes(node)
-        removeStyleOnNodesEffects(node)
-      })
-      return('🫥 All colors styles are removed in your selection')
-    break
-    case(PARAM_REMOVE_COLOR_VARIABLES):
-      validNodes.forEach( node => {
-        removeVariablesOnNodesFills(node)
-        removeVariablesOnNodesStrokes(node)
-        removeVariablesOnNodesEffects(node)
-      })
-      return('🫥 All colors variables are removed in your selection')
-    break
-    case(PARAM_REMOVE_CUSTOM_COLORS):
-      validNodes.forEach(node => {
-        removeCustomColorsOnNodesFills(node)
-        removeCustomColorsOnNodesStrokes(node)
-        removeCustomColorsOnNodesEffects(node)    
-      })
-      return('🫥 All custom colors are removed in your selection')
-    break
-    case(PARAM_REMOVE_ALL_COLORS):
-      validNodes.forEach(node => {
-        removeAnyColorTypeOnNodesFills(node)
-        removeAnyColorTypeOnNodesStrokes(node)
-        removeAnyColorTypeOnNodesEffects(node)    
-      })
-      return('🫥 All colors are removed in your selection')
-    break
-    case(PARAM_DETACH_COLOR_STYLES):
-      validNodes.forEach(node => {
-        detachStyleOnNodesFills(node)
-        detachStyleOnNodesStrokes(node)
-        detachStyleOnNodesEffects(node)
-      })
-      return('🥳 Detached all color styles in your selection.')
-    break
-    case(PARAM_DETACH_COLOR_VARIABLES):
-      validNodes.forEach(node => {
-        detachVariablesOnNodesFills(node)
-        detachVariablesOnNodesStrokes(node)
-        detachVariablesOnNodesEffects(node)
-      })
-      return('🥳 Detached all color variables in your selection.')
-    break
-    case(PARAM_REPLACE_ALL_COLORS):
-      validNodes.forEach(node => {  
-        replaceAnyColorTypeOnNodesFills(node)
-        replaceAnyColorTypeOnNodesStrokes(node)
-        removeAnyColorTypeOnNodesEffects(node)
-      })
-    return("Your colors were replaced.")
-    break
+  switch (parameters.actionChoice) {
+    case PARAM_REMOVE_COLOR_STYLES:
+      validNodes.forEach((node) => {
+        removeStyleOnNodesFills(node);
+        removeStyleOnNodesStrokes(node);
+        removeStyleOnNodesEffects(node);
+      });
+      return "🫥 All colors styles are removed in your selection";
+      break;
+    case PARAM_REMOVE_COLOR_VARIABLES:
+      validNodes.forEach((node) => {
+        removeVariablesOnNodesFills(node);
+        removeVariablesOnNodesStrokes(node);
+        removeVariablesOnNodesEffects(node);
+      });
+      return "🫥 All colors variables are removed in your selection";
+      break;
+    case PARAM_REMOVE_CUSTOM_COLORS:
+      validNodes.forEach((node) => {
+        removeCustomColorsOnNodesFills(node);
+        removeCustomColorsOnNodesStrokes(node);
+        removeCustomColorsOnNodesEffects(node);
+      });
+      return "🫥 All custom colors are removed in your selection";
+      break;
+    case PARAM_REMOVE_ALL_COLORS:
+      validNodes.forEach((node) => {
+        removeAnyColorTypeOnNodesFills(node);
+        removeAnyColorTypeOnNodesStrokes(node);
+        removeAnyColorTypeOnNodesEffects(node);
+      });
+      return "🫥 All colors are removed in your selection";
+      break;
+    case PARAM_DETACH_COLOR_STYLES:
+      validNodes.forEach((node) => {
+        detachStyleOnNodesFills(node);
+        detachStyleOnNodesStrokes(node);
+        detachStyleOnNodesEffects(node);
+      });
+      return "🥳 Detached all color styles in your selection.";
+      break;
+    case PARAM_DETACH_COLOR_VARIABLES:
+      validNodes.forEach((node) => {
+        detachVariablesOnNodesFills(node);
+        detachVariablesOnNodesStrokes(node);
+        detachVariablesOnNodesEffects(node);
+      });
+      return "🥳 Detached all color variables in your selection.";
+      break;
+    case PARAM_REPLACE_ALL_COLORS:
+      validNodes.forEach((node) => {
+        replaceAnyColorTypeOnNodesFills(node);
+        replaceAnyColorTypeOnNodesStrokes(node);
+        removeAnyColorTypeOnNodesEffects(node);
+      });
+      return "👏 Your colors were replaced.";
+      break;
     default:
-      throw new Error( "Plugin started with unknown parameters: " + JSON.stringify(parameters));
+      throw new Error(
+        "Plugin started with unknown parameters: " + JSON.stringify(parameters)
+      );
   }
 }
 
@@ -345,9 +389,8 @@ function setValidNodesRecursively(
         : node.name.toLowerCase().startsWith(preservedNode);
 
     if (!isExcluded) {
+      if (supportedNodes(node)) validNodes.push(node);
 
-      if(supportedNodes(node)) validNodes.push(node);
-      
       if ("children" in node)
         setValidNodesRecursively(
           node.children,
@@ -355,226 +398,264 @@ function setValidNodesRecursively(
           preserveChildren
         );
     }
-    if(isExcluded){
-      
+    if (isExcluded) {
       if (!preserveChildren && "children" in node) {
-        setValidNodesRecursively(node.children, preservedNode, preserveChildren);
+        setValidNodesRecursively(
+          node.children,
+          preservedNode,
+          preserveChildren
+        );
       }
     }
   });
 }
 
-
-
-function clone(val:any) : any  {
-  const type = typeof val
+function clone(val: any): any {
+  const type = typeof val;
   if (val === null) {
-    return null
-  } else if (type === 'undefined' || type === 'number' ||
-             type === 'string' || type === 'boolean') {
-    return val
-  } else if (type === 'object') {
+    return null;
+  } else if (
+    type === "undefined" ||
+    type === "number" ||
+    type === "string" ||
+    type === "boolean"
+  ) {
+    return val;
+  } else if (type === "object") {
     if (val instanceof Array) {
-      return val.map(x => clone(x))
+      return val.map((x) => clone(x));
     } else if (val instanceof Uint8Array) {
-      return new Uint8Array(val)
+      return new Uint8Array(val);
     } else {
-      let o:any = {}
+      let o: any = {};
       for (const key in val) {
-        o[key] = clone((val)[key])
+        o[key] = clone(val[key]);
       }
-      return o
+      return o;
     }
   }
-  throw 'unknown'
+  throw "unknown";
 }
-
 
 // FILLS
 
-function removeStyleOnNodesFills (node:SupportedNode):void {
-  if (node.fillStyleId === ""){ return}
-  node.fillStyleId = ""
-  node.fills = []
+function removeStyleOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId === "") {
+    return;
+  }
+  node.fillStyleId = "";
+  node.fills = [];
 }
 
-function detachStyleOnNodesFills (node:SupportedNode):void {
-  if (node.fillStyleId === ""){ return }
-  node.fillStyleId = ""
+function detachStyleOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId === "") {
+    return;
+  }
+  node.fillStyleId = "";
 }
 
-function replaceStyleOnNodesFills (node:SupportedNode):void {
-  if (node.fillStyleId === ""){ return}
-  node.fillStyleId = ""
-  node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT]
+function replaceStyleOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId === "") {
+    return;
+  }
+  node.fillStyleId = "";
+  node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT];
 }
 
-function removeVariablesOnNodesFills (node:SupportedNode): void {
-  if (node.fillStyleId !== ""){return}
-  
+function removeVariablesOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId !== "") {
+    return;
+  }
+
   // Checking if it's an array
-  if (!(node.fills instanceof Array)) {return}
+  if (!(node.fills instanceof Array)) {
+    return;
+  }
   // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedFills = (node.fills as any[]).map(x => clone(x))
+  var clonedFills = (node.fills as any[]).map((x) => clone(x));
 
-  var newfills: any[] = []
+  var newfills: any[] = [];
 
-  clonedFills.forEach(fill => {
-    const hasVariableAlias = fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  clonedFills.forEach((fill) => {
+    const hasVariableAlias =
+      fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (!hasVariableAlias) {
-      newfills.push(fill)
-    } 
-  })
-  node.fills = newfills
-}
-
-function detachVariablesOnNodesFills (node:SupportedNode): void {
-  if (node.fillStyleId !== ""){return}
-
-  // Checking if it's an array
-  if (!(node.fills instanceof Array)) {return}
-  // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedFills = (node.fills as any[]).map(x => clone(x))
-
-  node.fills = clonedFills.map(fill => {
-    const hasVariableAlias = fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
-    if (hasVariableAlias) {
-      fill.boundVariables = {}
-    } 
-    return fill
-  })
-}
-
-function replaceVariablesOnNodesFills (node:SupportedNode): void {
-  if (node.fillStyleId !== ""){return}
-  
-  // Checking if it's an array
-  if (!(node.fills instanceof Array)) {return}
-  // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedFills = (node.fills as any[]).map(x => clone(x))
-
-  var newfills: any[] = []
-
-  clonedFills.forEach(fill => {
-    const hasVariableAlias = fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
-    if (!hasVariableAlias) {
-      newfills.push(fill)
-    } else {
-      newfills.push(node.type === "TEXT" ? OPAQUE : SEMITRANSPARENT)
+      newfills.push(fill);
     }
-  })
-  
-  node.fills = newfills
+  });
+  node.fills = newfills;
 }
 
-function removeCustomColorsOnNodesFills (node:SupportedNode): void {
-  if (node.fillStyleId !== ""){return}
-  
+function detachVariablesOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId !== "") {
+    return;
+  }
+
   // Checking if it's an array
-  if (!(node.fills instanceof Array)){return}
+  if (!(node.fills instanceof Array)) {
+    return;
+  }
   // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedFills = (node.fills as any[]).map(x => clone(x))
+  var clonedFills = (node.fills as any[]).map((x) => clone(x));
 
-  var newfills: any[] = []
-
-  clonedFills.forEach(fill => {
-    const hasVariableAlias = fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  node.fills = clonedFills.map((fill) => {
+    const hasVariableAlias =
+      fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (hasVariableAlias) {
-      return newfills.push(fill)
-    } 
-  })
-  
-  node.fills = newfills
+      fill.boundVariables = {};
+    }
+    return fill;
+  });
 }
 
-function removeAnyColorTypeOnNodesFills (node:SupportedNode){
+function replaceVariablesOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId !== "") {
+    return;
+  }
+
+  // Checking if it's an array
+  if (!(node.fills instanceof Array)) {
+    return;
+  }
+  // Use type assertion to inform TypeScript that node.fills is an array
+  var clonedFills = (node.fills as any[]).map((x) => clone(x));
+
+  var newfills: any[] = [];
+
+  clonedFills.forEach((fill) => {
+    const hasVariableAlias =
+      fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+    if (!hasVariableAlias) {
+      newfills.push(fill);
+    } else {
+      newfills.push(node.type === "TEXT" ? OPAQUE : SEMITRANSPARENT);
+    }
+  });
+
+  node.fills = newfills;
+}
+
+function removeCustomColorsOnNodesFills(node: SupportedNode): void {
+  if (node.fillStyleId !== "") {
+    return;
+  }
+
+  // Checking if it's an array
+  if (!(node.fills instanceof Array)) {
+    return;
+  }
+  // Use type assertion to inform TypeScript that node.fills is an array
+  var clonedFills = (node.fills as any[]).map((x) => clone(x));
+
+  var newfills: any[] = [];
+
+  clonedFills.forEach((fill) => {
+    const hasVariableAlias =
+      fill?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+    if (hasVariableAlias) {
+      return newfills.push(fill);
+    }
+  });
+
+  node.fills = newfills;
+}
+
+function removeAnyColorTypeOnNodesFills(node: SupportedNode) {
   node.fills = [];
   node.fillStyleId = "";
 }
 
-function replaceAnyColorTypeOnNodesFills (node:SupportedNode): void {
-  if (!(node.fills instanceof Array && node.fills.length)) {return}
+function replaceAnyColorTypeOnNodesFills(node: SupportedNode): void {
+  if (!(node.fills instanceof Array && node.fills.length)) {
+    return;
+  }
   node.fillStyleId = "";
-  node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT]
+  node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT];
 }
 
-// STROKES 
+// STROKES
 
-function removeStyleOnNodesStrokes (node:SupportedNode):void {
+function removeStyleOnNodesStrokes(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.strokeStyleId === "") return;
-  node.strokeStyleId = ""
-  node.strokes = []
+  node.strokeStyleId = "";
+  node.strokes = [];
 }
 
-function detachStyleOnNodesStrokes (node:SupportedNode):void {
+function detachStyleOnNodesStrokes(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.strokeStyleId === "") return;
-  node.strokeStyleId = ""
+  node.strokeStyleId = "";
 }
 
-function detachVariablesOnNodesStrokes (node:SupportedNode): void {
-  
+function detachVariablesOnNodesStrokes(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.strokeStyleId !== "") return;
 
   // Checking if it's an array
-  if (!(node.strokes instanceof Array)) {return}
+  if (!(node.strokes instanceof Array)) {
+    return;
+  }
 
   // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedStrokes = (node.strokes as any[]).map(x => clone(x))
+  var clonedStrokes = (node.strokes as any[]).map((x) => clone(x));
 
-  node.strokes = clonedStrokes.map(stroke => {
-    
-    const hasVariableAlias = stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
-    if (hasVariableAlias) { 
-      stroke.boundVariables = {}
-    } 
-    return stroke
-  })
-}
-
-function removeVariablesOnNodesStrokes (node:SupportedNode): void {
-
-  if (node.type === "SECTION" || node.strokeStyleId !== "") return;
-
-  // Checking if it's an array
-  if (!(node.strokes instanceof Array)) {return}
-  // Use type assertion to inform TypeScript that node.strokes is an array
-  var clonedStrokes = (node.strokes as any[]).map(x => clone(x))
-
-  var newstrokes: any[] = []
-
-  clonedStrokes.forEach(stroke => {
-    const hasVariableAlias = stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
-    if (!hasVariableAlias) {
-      return newstrokes.push(stroke)
-    } 
-  })
-  
-  node.strokes = newstrokes
-}
-
-function removeCustomColorsOnNodesStrokes (node:SupportedNode): void {
-  if (node.type === "SECTION" || node.strokeStyleId !== "") return;
-  // Checking if it's an array
-  if (!(node.strokes instanceof Array)){return}
-  // Use type assertion to inform TypeScript that node.strokes is an array
-  var clonedStrokes = (node.strokes as any[]).map(x => clone(x))
-
-  var newstrokes: any[] = []
-
-  clonedStrokes.forEach(stroke => {
-    const hasVariableAlias = stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  node.strokes = clonedStrokes.map((stroke) => {
+    const hasVariableAlias =
+      stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (hasVariableAlias) {
-      return newstrokes.push(stroke)
-    } 
-  })
-  
-  node.strokes = newstrokes
+      stroke.boundVariables = {};
+    }
+    return stroke;
+  });
 }
 
-function removeAnyColorTypeOnNodesStrokes (node:SupportedNode){
+function removeVariablesOnNodesStrokes(node: SupportedNode): void {
+  if (node.type === "SECTION" || node.strokeStyleId !== "") return;
+
+  // Checking if it's an array
+  if (!(node.strokes instanceof Array)) {
+    return;
+  }
+  // Use type assertion to inform TypeScript that node.strokes is an array
+  var clonedStrokes = (node.strokes as any[]).map((x) => clone(x));
+
+  var newstrokes: any[] = [];
+
+  clonedStrokes.forEach((stroke) => {
+    const hasVariableAlias =
+      stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+    if (!hasVariableAlias) {
+      return newstrokes.push(stroke);
+    }
+  });
+
+  node.strokes = newstrokes;
+}
+
+function removeCustomColorsOnNodesStrokes(node: SupportedNode): void {
+  if (node.type === "SECTION" || node.strokeStyleId !== "") return;
+  // Checking if it's an array
+  if (!(node.strokes instanceof Array)) {
+    return;
+  }
+  // Use type assertion to inform TypeScript that node.strokes is an array
+  var clonedStrokes = (node.strokes as any[]).map((x) => clone(x));
+
+  var newstrokes: any[] = [];
+
+  clonedStrokes.forEach((stroke) => {
+    const hasVariableAlias =
+      stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+    if (hasVariableAlias) {
+      return newstrokes.push(stroke);
+    }
+  });
+
+  node.strokes = newstrokes;
+}
+
+function removeAnyColorTypeOnNodesStrokes(node: SupportedNode) {
   // guard
   if (node.type === "SECTION") return;
 
@@ -582,110 +663,129 @@ function removeAnyColorTypeOnNodesStrokes (node:SupportedNode){
   node.strokeStyleId = "";
 }
 
-function replaceAnyColorTypeOnNodesStrokes (node:SupportedNode): void {
+function replaceAnyColorTypeOnNodesStrokes(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION") return;
-  if (!(node.strokes instanceof Array && node.strokes.length)) {return}
+  if (!(node.strokes instanceof Array && node.strokes.length)) {
+    return;
+  }
 
   node.strokeStyleId = "";
-  node.strokes = [OPAQUE]
+  node.strokes = [OPAQUE];
 }
 
 // EFFECTS
 
-function removeStyleOnNodesEffects (node:SupportedNode):void {
+function removeStyleOnNodesEffects(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
-  if (node.effectStyleId === ""){return}
+  if (node.effectStyleId === "") {
+    return;
+  }
 
-  node.effectStyleId = ""
-  node.effects = []
+  node.effectStyleId = "";
+  node.effects = [];
 }
 
-function detachStyleOnNodesEffects (node:SupportedNode):void {
+function detachStyleOnNodesEffects(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
-  if (node.effectStyleId === ""){return}
+  if (node.effectStyleId === "") {
+    return;
+  }
 
-  node.effectStyleId = ""
+  node.effectStyleId = "";
 }
 
-function detachVariablesOnNodesEffects (node:SupportedNode): void {
+function detachVariablesOnNodesEffects(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
-  if (node.effectStyleId !== ""){return}
-  
+  if (node.effectStyleId !== "") {
+    return;
+  }
+
   // Checking if it's an array
-  if (!(node.effects instanceof Array)) {return}
+  if (!(node.effects instanceof Array)) {
+    return;
+  }
 
   // Use type assertion to inform TypeScript that node.fills is an array
-  var clonedEffects = (node.effects as any[]).map(x => clone(x))
+  var clonedEffects = (node.effects as any[]).map((x) => clone(x));
 
-  node.effects = clonedEffects.map(effect => {
-    
-    const hasVariableAlias = effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  node.effects = clonedEffects.map((effect) => {
+    const hasVariableAlias =
+      effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (hasVariableAlias) {
-      effect.setBoundVariableForEffect(null)
-      effect.boundVariables = {}
-    } 
-    return effect
-  })
+      effect.setBoundVariableForEffect(null);
+      effect.boundVariables = {};
+    }
+    return effect;
+  });
 }
 
-function removeVariablesOnNodesEffects (node:SupportedNode): void {
+function removeVariablesOnNodesEffects(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
-  
-  if (node.effectStyleId !== ""){return}
-  
+
+  if (node.effectStyleId !== "") {
+    return;
+  }
+
   // Checking if it's an array
-  if (!(node.effects instanceof Array)) {return}
+  if (!(node.effects instanceof Array)) {
+    return;
+  }
   // Use type assertion to inform TypeScript that node.effects is an array
-  var clonedEffects = (node.effects as any[]).map(x => clone(x))
+  var clonedEffects = (node.effects as any[]).map((x) => clone(x));
 
-  var neweffects: any[] = []
+  var neweffects: any[] = [];
 
-  clonedEffects.forEach(effect => {
-    const hasVariableAlias = effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  clonedEffects.forEach((effect) => {
+    const hasVariableAlias =
+      effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (!hasVariableAlias) {
-      return neweffects.push(effect)
-    } 
-  })
-  
-  node.effects = neweffects
+      return neweffects.push(effect);
+    }
+  });
+
+  node.effects = neweffects;
 }
 
-function removeCustomColorsOnNodesEffects (node:SupportedNode): void {
+function removeCustomColorsOnNodesEffects(node: SupportedNode): void {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
 
-  if (node.effectStyleId !== ""){return}
-  
+  if (node.effectStyleId !== "") {
+    return;
+  }
+
   // Checking if it's an array
-  if (!(node.effects instanceof Array)){return}
+  if (!(node.effects instanceof Array)) {
+    return;
+  }
   // Use type assertion to inform TypeScript that node.effects is an array
-  var clonedEffects = (node.effects as any[]).map(x => clone(x))
+  var clonedEffects = (node.effects as any[]).map((x) => clone(x));
 
-  var neweffects: any[] = []
+  var neweffects: any[] = [];
 
-  clonedEffects.forEach(effect => {
-    const hasVariableAlias = effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
+  clonedEffects.forEach((effect) => {
+    const hasVariableAlias =
+      effect?.boundVariables?.color?.type === "VARIABLE_ALIAS";
     if (hasVariableAlias) {
-      return neweffects.push(effect)
-    } 
-  })
-  
-  node.effects = neweffects
+      return neweffects.push(effect);
+    }
+  });
+
+  node.effects = neweffects;
 }
 
-function removeAnyColorTypeOnNodesEffects (node:SupportedNode){
+function removeAnyColorTypeOnNodesEffects(node: SupportedNode) {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
 
   node.effects = [];
   node.effectStyleId = "";
 }
-
 
 /*
 These funcs all work, but did not render userful
