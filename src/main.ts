@@ -143,12 +143,6 @@ figma.ui.onmessage = (msg) => {
 
 // The 'input' event listens for text change in the Quick Actions box after a plugin is 'Tabbed' into.
 figma.parameters.on("input", ({ key, query, result }: ParameterInputEvent) => {
-  // The user must make a selection
-  const sel: readonly SceneNode[] = figma.currentPage.selection;
-  if (sel.length < 1) {
-    throw new Error("You need to select at least one layer.");
-  }
-
   switch (key) {
     case "actionChoice":
       const actionChoiceOptions = [
@@ -246,6 +240,12 @@ function listExcludableNodes(query: string): any {
 
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
 figma.on("run", async ({ parameters }) => {
+  // The user must make a selection
+  const sel: readonly SceneNode[] = figma.currentPage.selection;
+  if (sel.length < 1) {
+    figma.closePlugin("🟡 Select at least one layer 🟡");
+  }
+
   try {
     // the usual
     const result = startPluginWithParameters(parameters!, figma.command);
