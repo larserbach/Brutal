@@ -50,9 +50,6 @@ const PARAM_REMOVE_COLOR_VARIABLES = "Remove variables from selected layers";
 const PARAM_REMOVE_CUSTOM_COLORS = "Remove custom colors from selected layers";
 const PARAM_DETACH_COLOR_STYLES = "Detach styles on selected layers";
 const PARAM_DETACH_COLOR_VARIABLES = "Detach variables on selected layers";
-// const PARAM_REPLACE_COLOR_STYLES = "Replace styles with custom color"
-// const PARAM_REPLACE_COLOR_VARIABLES = "Replace variables with custom color"
-// const PARAM_REPLACE_CUSTOM_COLORS = "Replace custom colors with custom color"
 const PARAM_REPLACE_ALL_COLORS = "Replace styles, variables and custom colors";
 // Parameter Suggestions - key: typeChoice
 const PARAM_TYPE_FILLS = "Layer fills";
