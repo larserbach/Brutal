@@ -1,15 +1,19 @@
 {
   "name": "Brutal",
   "id": "1215386279132052346",
-  "networkAccess": { "allowedDomains": ["none"] },
+  "networkAccess": {
+    "allowedDomains": [
+      "https://api.mixpanel.com"
+    ],
+    "reasoning": "Plugin sends anonymized userdata to mixpanel.com for anylytics"
+  },
   "api": "1.0.0",
   "main": "dist/main.js",
   "capabilities": [],
   "enableProposedApi": false,
-  "editorType": [
-    "figma"
-  ],
-  
+  "editorType": ["figma"],
+  "ui": "dist/ui.html",
+
   "parameters": [
     {
       "name": "Brutal action",

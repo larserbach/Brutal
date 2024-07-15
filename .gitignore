@@ -6,4 +6,5 @@ node_modules
 out/
 dist/
 code.js
-src/private_mixpanelToken.ts
+private_mixpanelToken.*
+.DS_Strore
