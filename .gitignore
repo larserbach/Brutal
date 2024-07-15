@@ -6,3 +6,4 @@ node_modules
 out/
 dist/
 code.js
+src/private_mixpanelToken.ts
