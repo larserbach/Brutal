@@ -14,38 +14,8 @@
 // Supported Nodes include any Figma relevant node which supports strokes, fill or effects
 // SectionNodes seem to be a bit special, currently they seem not to support stokes
 
-type SupportedNode =
-  | BooleanOperationNode
-  | ComponentNode
-  | ComponentSetNode
-  | EllipseNode
-  | FrameNode
-  | InstanceNode
-  | LineNode
-  | PolygonNode
-  | RectangleNode
-  | SectionNode
-  | StarNode
-  | TextNode
-  | VectorNode
-  | ShapeWithTextNode;
+import { SupportedNode, SUPPORTED_TYPES } from "./types";
 
-const SUPPORTED_TYPES: NodeType[] = [
-  "BOOLEAN_OPERATION",
-  "COMPONENT",
-  "COMPONENT_SET",
-  "ELLIPSE",
-  "FRAME",
-  "INSTANCE",
-  "LINE",
-  "POLYGON",
-  "RECTANGLE",
-  "SECTION",
-  "STAR",
-  "TEXT",
-  "VECTOR",
-  "SHAPE_WITH_TEXT",
-];
 
 function supportedNodes(node: SceneNode): node is SupportedNode {
   return SUPPORTED_TYPES.includes(node.type);
@@ -445,28 +415,20 @@ function clone(val: any): any {
 
 // FILLS
 
-function removeStyleOnNodesFills(node: SupportedNode): void {
+async function removeStyleOnNodesFills(node: SupportedNode): Promise<void> {
   if (node.fillStyleId === "") {
     return;
   }
-  node.fillStyleId = "";
+  await node.setFillStyleIdAsync("");
   node.fills = [];
 }
 
-function detachStyleOnNodesFills(node: SupportedNode): void {
+async function detachStyleOnNodesFills(node: SupportedNode): Promise<void> {
   if (node.fillStyleId === "") {
     return;
   }
-  node.fillStyleId = "";
+  await node.setFillStyleIdAsync("");
 }
-
-// function replaceStyleOnNodesFills(node: SupportedNode): void {
-//   if (node.fillStyleId === "") {
-//     return;
-//   }
-//   node.fillStyleId = "";
-//   node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT];
-// }
 
 function removeVariablesOnNodesFills(node: SupportedNode): void {
   if (node.fillStyleId !== "") {
@@ -566,32 +528,32 @@ function removeCustomColorsOnNodesFills(node: SupportedNode): void {
   node.fills = newfills;
 }
 
-function removeAnyColorTypeOnNodesFills(node: SupportedNode) {
+async function removeAnyColorTypeOnNodesFills(node: SupportedNode): Promise<void> {
   node.fills = [];
-  node.fillStyleId = "";
+  await node.setFillStyleIdAsync("");
 }
 
-function replaceAnyColorTypeOnNodesFills(node: SupportedNode): void {
+async function replaceAnyColorTypeOnNodesFills(node: SupportedNode): Promise<void> {
   if (!(node.fills instanceof Array && node.fills.length)) {
     return;
   }
-  node.fillStyleId = "";
+  await node.setFillStyleIdAsync("");
   node.fills = node.type === "TEXT" ? [OPAQUE] : [SEMITRANSPARENT];
 }
 
 // STROKES
 
-function removeStyleOnNodesStrokes(node: SupportedNode): void {
+async function removeStyleOnNodesStrokes(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION" || node.strokeStyleId === "") return;
-  node.strokeStyleId = "";
+  await node.setStrokeStyleIdAsync("")
   node.strokes = [];
 }
 
-function detachStyleOnNodesStrokes(node: SupportedNode): void {
+async function detachStyleOnNodesStrokes(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION" || node.strokeStyleId === "") return;
-  node.strokeStyleId = "";
+  await node.setStrokeStyleIdAsync("")
 }
 
 function detachVariablesOnNodesStrokes(node: SupportedNode): void {
@@ -661,46 +623,45 @@ function removeCustomColorsOnNodesStrokes(node: SupportedNode): void {
   node.strokes = newstrokes;
 }
 
-function removeAnyColorTypeOnNodesStrokes(node: SupportedNode) {
+async function removeAnyColorTypeOnNodesStrokes(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION") return;
 
   node.strokes = [];
-  node.strokeStyleId = "";
+  await node.setStrokeStyleIdAsync("")
 }
 
-function replaceAnyColorTypeOnNodesStrokes(node: SupportedNode): void {
+async function replaceAnyColorTypeOnNodesStrokes(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION") return;
   if (!(node.strokes instanceof Array && node.strokes.length)) {
     return;
   }
 
-  node.strokeStyleId = "";
+  await node.setStrokeStyleIdAsync("")
   node.strokes = [OPAQUE];
 }
 
 // EFFECTS
 
-function removeStyleOnNodesEffects(node: SupportedNode): void {
+async function removeStyleOnNodesEffects(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
   if (node.effectStyleId === "") {
     return;
   }
-
-  node.effectStyleId = "";
+  await node.setEffectStyleIdAsync("")
   node.effects = [];
 }
 
-function detachStyleOnNodesEffects(node: SupportedNode): void {
+async function detachStyleOnNodesEffects(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
   if (node.effectStyleId === "") {
     return;
   }
 
-  node.effectStyleId = "";
+  await node.setEffectStyleIdAsync("")
 }
 
 function detachVariablesOnNodesEffects(node: SupportedNode): void {
@@ -742,9 +703,9 @@ function removeVariablesOnNodesEffects(node: SupportedNode): void {
     return;
   }
   // Use type assertion to inform TypeScript that node.effects is an array
-  var clonedEffects = (node.effects as any[]).map((x) => clone(x));
+  const clonedEffects = (node.effects as any[]).map((x) => clone(x));
 
-  var neweffects: any[] = [];
+  const neweffects: any[] = [];
 
   clonedEffects.forEach((effect) => {
     const hasVariableAlias =
@@ -785,10 +746,10 @@ function removeCustomColorsOnNodesEffects(node: SupportedNode): void {
   node.effects = neweffects;
 }
 
-function removeAnyColorTypeOnNodesEffects(node: SupportedNode) {
+async function removeAnyColorTypeOnNodesEffects(node: SupportedNode): Promise<void> {
   // guard
   if (node.type === "SECTION" || node.type === "SHAPE_WITH_TEXT") return;
 
   node.effects = [];
-  node.effectStyleId = "";
+  await node.setEffectStyleIdAsync("")
 }

@@ -11,9 +11,11 @@
   "main": "dist/main.js",
   "capabilities": [],
   "enableProposedApi": false,
-  "editorType": ["figma"],
+  "editorType": [
+    "figma"
+  ],
   "ui": "dist/ui.html",
-
+  "documentAccess": "dynamic-page",
   "parameters": [
     {
       "name": "Brutal action",
