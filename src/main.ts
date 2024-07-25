@@ -243,7 +243,7 @@ figma.on("run", ({ parameters }) => {
     })
     .catch((err) => {
       console.error(err);
-      
+
     });
 
   }
@@ -298,9 +298,9 @@ function startPluginWithParameters(parameters: ParameterValues | undefined): str
   switch (parameters.actionChoice) {
     case PARAM_REMOVE_COLOR_STYLES:
       validNodes.forEach((node) => {
-        removeStyleOnNodesFills(node);
-        removeStyleOnNodesStrokes(node);
-        removeStyleOnNodesEffects(node);
+        removeStyleOnNodesFills(node).catch(err => {throw err});
+        removeStyleOnNodesStrokes(node).catch(err => {throw err});
+        removeStyleOnNodesEffects(node).catch(err => {throw err});
       });
       return "🫥 All colors styles are removed in your selection";
       
@@ -322,17 +322,17 @@ function startPluginWithParameters(parameters: ParameterValues | undefined): str
       
     case PARAM_REMOVE_ALL_COLORS:
       validNodes.forEach((node) => {
-        removeAnyColorTypeOnNodesFills(node);
-        removeAnyColorTypeOnNodesStrokes(node);
-        removeAnyColorTypeOnNodesEffects(node);
+        removeAnyColorTypeOnNodesFills(node).catch(err => {throw err});
+        removeAnyColorTypeOnNodesStrokes(node).catch(err => {throw err});
+        removeAnyColorTypeOnNodesEffects(node).catch(err => {throw err});
       });
       return "🫥 All colors are removed in your selection";
       
     case PARAM_DETACH_COLOR_STYLES:
       validNodes.forEach((node) => {
-        detachStyleOnNodesFills(node);
-        detachStyleOnNodesStrokes(node);
-        detachStyleOnNodesEffects(node);
+        detachStyleOnNodesFills(node).catch(err => {throw err});
+        detachStyleOnNodesStrokes(node).catch(err => {throw err});
+        detachStyleOnNodesEffects(node).catch(err => {throw err});
       });
       return "🥳 Detached all color styles in your selection.";
       
@@ -346,9 +346,9 @@ function startPluginWithParameters(parameters: ParameterValues | undefined): str
       
     case PARAM_REPLACE_ALL_COLORS:
       validNodes.forEach((node) => {
-        replaceAnyColorTypeOnNodesFills(node);
-        replaceAnyColorTypeOnNodesStrokes(node);
-        removeAnyColorTypeOnNodesEffects(node);
+        replaceAnyColorTypeOnNodesFills(node).catch(err => {throw err});
+        replaceAnyColorTypeOnNodesStrokes(node).catch(err => {throw err});
+        removeAnyColorTypeOnNodesEffects(node).catch(err => {throw err});
       });
       return "👏 Your colors were replaced.";
       
