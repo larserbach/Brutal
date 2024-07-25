@@ -3,13 +3,13 @@
 /* _eslint-disable @typescript-eslint/no-unsafe-call */
 /* _eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* _eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-async-promise-executor */
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* _eslint-disable @typescript-eslint/no-unused-vars */
+/* _eslint-disable no-async-promise-executor */
+/* _eslint-disable @typescript-eslint/no-misused-promises */
+/* _eslint-disable @typescript-eslint/no-floating-promises */
+/* _eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* _eslint-disable @typescript-eslint/require-await */
+/* _eslint-disable @typescript-eslint/no-unsafe-member-access */
 // Type handling
 // Supported Nodes include any Figma relevant node which supports strokes, fill or effects
 // SectionNodes seem to be a bit special, currently they seem not to support stokes
@@ -69,44 +69,51 @@ const SEMITRANSPARENT: SolidPaint = {
 /* # USER IDENTIFICATION  */
 /* # # # # # # # # # # # #*/
 
-const getUserId = async () => {
-  let userId = Date.now();
 
-  try {
-    const id = await figma.clientStorage.getAsync("userId");
 
-    if (typeof id === "undefined") {
-      figma.clientStorage.setAsync("userId", userId);
+
+const getUserId = async (): Promise<string | undefined> => {
+  try{
+    console.log("try getUserID")
+    const storedId = await figma.clientStorage.getAsync("userId") as string | undefined;
+    if (storedId) {
+      return storedId;
     } else {
-      userId = id;
+      const userId = String(Date.now());
+      await figma.clientStorage.setAsync("userId", userId)
+      return userId
     }
+
   } catch (e) {
     console.error("userId retrieving error", e);
-    figma.clientStorage.setAsync("userId", userId);
+    throw e
   }
-  return userId;
 };
 
-const userIdentifacation = new Promise<boolean>(async (resolve, reject) => {
-  console.log("  awaiting userID");
-  const userId = await getUserId();
-  console.log(`  got userId ${userId}`);
-  figma.ui.postMessage({ type: "identify", userId });
-  console.log("promise resolved");
-  resolve(true);
-});
+
+// const userIdentification = new Promise<boolean>(async (resolve, reject) => {
+//   console.log("  awaiting userID");
+//   const userId = await getUserId();
+//   console.log(`  got userId ${userId}`);
+//   figma.ui.postMessage({ type: "identify", userId });
+//   console.log("promise resolved");
+//   resolve(true);
+// });
 
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__, { visible: false });
 
-figma.ui.onmessage = (msg) => {
-  console.log("Got message from ui:");
-  if (msg.type === "track-done") {
+figma.ui.onmessage = (msg: {type: string, data: string | undefined}) => {
+  console.log("Got message from ui:"); 
+
+  if (msg.type === "initialized") {
+    console.log("  mixpanel is initialized");
+  } else if (msg.type === "mixpanel-init-fail") {
+    console.log("  mixpanel initializiation failed");
+  } else if (msg.type === "track-done") {
     console.log("  track is done");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     figma.closePlugin(msg.data);
-  } else if (msg.type === "initialized") {
-    console.log("  mixpanel is initialized");
   }
 };
 
@@ -211,33 +218,34 @@ function listExcludableNodes(query: string): {name: string, data: string}[] {
 }
 
 // When the user presses Enter after inputting all parameters, the 'run' event is fired.
-figma.on("run", async ({ parameters }) => {
+figma.on("run", ({ parameters }) => {
   // The user must make a selection
   const sel: readonly SceneNode[] = figma.currentPage.selection;
   if (sel.length < 1) {
+    console.log('no selection')
     figma.closePlugin("🟡 Select at least one layer 🟡");
-  }
 
-  try {
+  } else {
+
+    console.log('still runningggg')
     // the usual
+    
     const result = startPluginWithParameters(parameters);
-    // figma.closePlugin(result);
-
-    //analytics
-    userIdentifacation
-      .then(() => {
-        console.log("is identified");
-        figma.ui.postMessage({
-          type: "track",
-          data: { track: parameters?.actionChoice, msg: result },
-        });
-      })
-      .catch((err) => {
-        console.error(err);
+    
+    getUserId()
+    .then(userId => {
+      console.log(`  got userId ${userId}`);
+      figma.ui.postMessage({ type: "identify", userId });
+      figma.ui.postMessage({
+        type: "track",
+        data: { track: parameters?.actionChoice, msg: result },
       });
-  } catch (err: unknown) {
-    const msg = typeof getErrorString(err) == "string" ? getErrorString(err) : "Something went terribly wrong @ 001"
-    figma.closePlugin(msg);
+    })
+    .catch((err) => {
+      console.error(err);
+      
+    });
+
   }
 });
 
@@ -245,6 +253,7 @@ const validNodes: SupportedNode[] = [];
 
 // Manages logic depending on user input, returns messages when everything is done
 function startPluginWithParameters(parameters: ParameterValues | undefined): string {
+  console.log('startPluginWithParams')
   // Get users selection on the canvas
   if (parameters === undefined) {
     throw new Error("No parameters available");

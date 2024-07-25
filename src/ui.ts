@@ -10,12 +10,17 @@ window.onmessage = async (event) => {
 
   if (message.type === "identify") {
     mixpanel.identify(message.userId);
-    await mixpanel.track("Plugin Started");
-    console.log("  so far so good");
-    parent.postMessage(
-      { pluginMessage: { type: "initialized", val: true } },
-      "*"
-    );
+    try {
+      await mixpanel.track("Plugin Started");
+      console.log("  so far so good");
+    } catch (error) {
+      console.log('catched err')
+      parent.postMessage(
+        { pluginMessage: { type: "mixpanel-init-fail", val: true } },
+        "*"
+      );
+      
+    }
   }
 
   if (message.type === "track") {
