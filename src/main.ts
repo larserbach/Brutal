@@ -1,21 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* _eslint-disable @typescript-eslint/no-explicit-any */
-/* _eslint-disable @typescript-eslint/no-unsafe-call */
-/* _eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-/* _eslint-disable @typescript-eslint/no-unsafe-argument */
-/* _eslint-disable @typescript-eslint/no-unused-vars */
-/* _eslint-disable no-async-promise-executor */
-/* _eslint-disable @typescript-eslint/no-misused-promises */
-/* _eslint-disable @typescript-eslint/no-floating-promises */
-/* _eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* _eslint-disable @typescript-eslint/require-await */
-/* _eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 // Type handling
 // Supported Nodes include any Figma relevant node which supports strokes, fill or effects
 // SectionNodes seem to be a bit special, currently they seem not to support stokes
 
 import { SupportedNode, SUPPORTED_TYPES } from "./types";
-import { getErrorString, clone } from "./utils";
+import {clone } from "./utils";
 
 
 function supportedNodes(node: SceneNode): node is SupportedNode {
@@ -89,16 +78,6 @@ const getUserId = async (): Promise<string | undefined> => {
     throw e
   }
 };
-
-
-// const userIdentification = new Promise<boolean>(async (resolve, reject) => {
-//   console.log("  awaiting userID");
-//   const userId = await getUserId();
-//   console.log(`  got userId ${userId}`);
-//   figma.ui.postMessage({ type: "identify", userId });
-//   console.log("promise resolved");
-//   resolve(true);
-// });
 
 // This shows the HTML page in "ui.html".
 figma.showUI(__html__, { visible: false });
@@ -238,6 +217,7 @@ figma.on("run", ({ parameters }) => {
       figma.ui.postMessage({ type: "identify", userId });
       figma.ui.postMessage({
         type: "track",
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data: { track: parameters?.actionChoice, msg: result },
       });
     })
@@ -245,7 +225,6 @@ figma.on("run", ({ parameters }) => {
       console.error(err);
 
     });
-
   }
 });
 
@@ -423,7 +402,7 @@ function removeVariablesOnNodesFills(node: SupportedNode): void {
     return;
   }
 
-  const clonedFills: Paint[] = (node.fills).map((x) => clone(x));
+  const clonedFills: Paint[] = (node.fills).map((x) => clone(x) as Paint);
 
   node.fills = clonedFills.filter((fill) => {
     const hasVariableAlias = fill.type === 'SOLID' && fill.boundVariables?.color?.type === "VARIABLE_ALIAS"
@@ -441,7 +420,7 @@ function detachVariablesOnNodesFills(node: SupportedNode): void {
     return;
   }
 
-  const clonedFills: Paint[] = (node.fills).map((x) => clone(x));
+  const clonedFills: Paint[] = (node.fills).map((x) => clone(x) as Paint);
 
   node.fills = clonedFills.map((fill) => {
     const hasVariableAlias = fill.type === 'SOLID' && fill.boundVariables?.color?.type === "VARIABLE_ALIAS";
@@ -461,7 +440,7 @@ function removeCustomColorsOnNodesFills(node: SupportedNode): void {
     return;
   }
 
-  const clonedFills: Paint[] = (node.fills).map((x) => clone(x));
+  const clonedFills: Paint[] = (node.fills).map((x) => clone(x) as Paint);
 
   node.fills = clonedFills.filter((fill) => {
     const hasVariableAlias = fill.type === 'SOLID' && fill.boundVariables?.color?.type === "VARIABLE_ALIAS";
@@ -506,7 +485,7 @@ function detachVariablesOnNodesStrokes(node: SupportedNode): void {
     return;
   }
 
-  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x));
+  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x) as Paint);
 
   node.strokes = clonedStrokes.map((stroke) => {
     const hasVariableAlias = stroke.type === 'SOLID' && stroke.boundVariables?.color?.type === "VARIABLE_ALIAS";
@@ -525,7 +504,7 @@ function removeVariablesOnNodesStrokes(node: SupportedNode): void {
     return;
   }
   
-  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x));
+  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x) as Paint);
 
   node.strokes = clonedStrokes.filter((stroke) => {
     const hasVariableAlias = stroke.type === 'SOLID' && stroke?.boundVariables?.color?.type === "VARIABLE_ALIAS";
@@ -540,7 +519,7 @@ function removeCustomColorsOnNodesStrokes(node: SupportedNode): void {
     return;
   }
 
-  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x));
+  const clonedStrokes: Paint[] = (node.strokes).map((x) => clone(x) as Paint);
 
   node.strokes = clonedStrokes.filter((stroke) => {
     const hasVariableAlias = stroke.type === 'SOLID' && stroke.boundVariables?.color?.type === "VARIABLE_ALIAS";
@@ -603,7 +582,7 @@ function detachVariablesOnNodesEffects(node: SupportedNode): void {
     return;
   }
 
-  const clonedEffects: readonly Effect[] = (node.effects).map((x) => clone(x));
+  const clonedEffects: Effect[] = (node.effects).map((x) => clone(x) as Effect);
 
   node.effects = clonedEffects.map((effect) => {
     const hasVariableAlias = effect?.boundVariables && 'color' in effect.boundVariables && effect.boundVariables.color?.type == "VARIABLE_ALIAS"
@@ -627,7 +606,7 @@ function removeVariablesOnNodesEffects(node: SupportedNode): void {
     return;
   }
   
-  const clonedEffects: readonly Effect[]  = (node.effects).map((x) => clone(x));
+   const clonedEffects: Effect[]  = (node.effects).map((x) => clone(x) as Effect);
 
   node.effects = clonedEffects.filter((effect) => {
     const hasVariableAlias = effect.boundVariables && 'color' in effect.boundVariables && effect.boundVariables.color?.type == "VARIABLE_ALIAS"
@@ -652,7 +631,7 @@ function removeCustomColorsOnNodesEffects(node: SupportedNode): void {
     return;
   }
 
-  const clonedEffects: Effect[] = (node.effects).map((x) => clone(x));
+   const clonedEffects: Effect[] = (node.effects).map((x) => clone(x) as Effect);
 
   node.effects = clonedEffects.filter((effect) => {
     const hasVariableAlias = effect.boundVariables && 'color' in effect.boundVariables && effect.boundVariables.color?.type === "VARIABLE_ALIAS";

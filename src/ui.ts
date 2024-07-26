@@ -24,10 +24,18 @@ window.onmessage = async (event) => {
   }
 
   if (message.type === "track") {
-    await mixpanel.track(message.data.track);
-    parent.postMessage(
-      { pluginMessage: { type: "track-done", data: message.data.msg } },
-      "*"
-    );
+    try{
+      await mixpanel.track(message.data.track);
+      parent.postMessage(
+        { pluginMessage: { type: "track-done", data: message.data.msg } },
+        "*"
+      );
+    } catch (error) {
+      console.log(error)
+      parent.postMessage(
+        { pluginMessage: { type: "mixpanel-init-fail", val: "error on track" } },
+        "*"
+      );
+    }
   }
 };

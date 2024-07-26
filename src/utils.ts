@@ -1,13 +1,3 @@
-export function getErrorString(error:unknown): string | undefined{
-  if (typeof error === "string") {
-      return error
-    } else if (error instanceof Error) {
-      return error.message
-    }
-    return undefined
-}
-
-
 export function clone(val: any): any {
   const type = typeof val;
   if (val === null) {
