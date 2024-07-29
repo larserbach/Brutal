@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 // Type handling
 // Supported Nodes include any Figma relevant node which supports strokes, fill or effects
@@ -396,16 +397,62 @@ async function detachStyleOnNodesFills(node: SupportedNode): Promise<void> {
   await node.setFillStyleIdAsync("");
 }
 
-function removeVariablesOnNodesFills(node: SupportedNode): void {
-  if (node.fillStyleId !== "") {
-    return;
+
+function filterOutFillsWithVariables(fills: Paint[]): Paint[] {
+  return fills.filter((fill: Paint) => {
+    const hasVariableAlias = fill.type === 'SOLID' && fill.boundVariables?.color?.type === "VARIABLE_ALIAS"
+    return (!hasVariableAlias)
+  })
+}
+
+
+async function removeVariablesOnMixedSymbol(node: TextNode): Promise<void>{
+  console.log('found a symbol')
+  console.log(node.fills)
+
+  const stsId = node.getStyledTextSegments(['fillStyleId'])
+  console.log("stsId:")
+  console.log(stsId)
+
+  const stsFills = node.getStyledTextSegments(['fills'])
+  console.log("stsFills")
+  console.log(stsFills)
+
+  stsFills.forEach((pick) => {
+    if ("fills" in pick) {
+      console.log("fills are in pick")
+      const newPicksFills = filterOutFillsWithVariables(pick.fills)
+      node.setRangeFills(pick.start, pick.end, newPicksFills)
+    }
+  })
+
+  console.log("stsId:")
+  console.log(stsId)
+
+  for (const pick of stsId) {
+    await node.setRangeFillStyleIdAsync(pick.start, pick.end, pick.fillStyleId)
   }
+}
+
+
+function removeVariablesOnNodesFills(node: SupportedNode): void {
+
+  if (typeof node.fills == 'symbol' && node.type == "TEXT"){
+    console.log('fills is symbol')
+    removeVariablesOnMixedSymbol(node)
+    return
+  }
+
+    if (node.fillStyleId !== "") {
+    return;
+    }
+
 
   // Checking if it's an array
   if (!(node.fills instanceof Array)) {
+    console.log('fills is no array')
     return;
   }
-
   const clonedFills: Paint[] = (node.fills).map((x) => clone(x) as Paint);
 
   node.fills = clonedFills.filter((fill) => {
