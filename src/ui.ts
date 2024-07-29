@@ -14,7 +14,7 @@ window.onmessage = async (event) => {
       await mixpanel.track("Plugin Started");
       console.log("  so far so good");
     } catch (error) {
-      console.log('catched err')
+      console.log(error)
       parent.postMessage(
         { pluginMessage: { type: "mixpanel-init-fail", val: true } },
         "*"
@@ -33,7 +33,7 @@ window.onmessage = async (event) => {
     } catch (error) {
       console.log(error)
       parent.postMessage(
-        { pluginMessage: { type: "mixpanel-init-fail", val: "error on track" } },
+        { pluginMessage: { type: "track-failed", data: message.data.msg } },
         "*"
       );
     }

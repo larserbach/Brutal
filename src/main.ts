@@ -12,8 +12,7 @@ function supportedNodes(node: SceneNode): node is SupportedNode {
 }
 
 // Parameter Suggestions - key: actionChoice
-const PARAM_REMOVE_ALL_COLORS =
-  "Remove All (Styles, variables and custom colors)";
+const PARAM_REMOVE_ALL_COLORS = "Remove All (Styles, variables and custom colors)";
 const PARAM_REMOVE_COLOR_STYLES = "Remove styles from selected layers";
 const PARAM_REMOVE_COLOR_VARIABLES = "Remove variables from selected layers";
 const PARAM_REMOVE_CUSTOM_COLORS = "Remove custom colors from selected layers";
@@ -91,6 +90,10 @@ figma.ui.onmessage = (msg: {type: string, data: string | undefined}) => {
     console.log("  mixpanel initializiation failed");
   } else if (msg.type === "track-done") {
     console.log("  track is done");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    figma.closePlugin(msg.data);
+  } else if (msg.type === "track-failed") {
+    console.log("  track failed");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     figma.closePlugin(msg.data);
   }
@@ -210,6 +213,7 @@ figma.on("run", ({ parameters }) => {
     // the usual
     
     const result = startPluginWithParameters(parameters);
+    console.log(result)
     
     getUserId()
     .then(userId => {
