@@ -19,7 +19,7 @@ function detachVariablesOnFills(fills: Paint[] | readonly Paint[]): Paint[] {
   });
 }
 
-async function detachVariablesOnTextSegmentFills(node: TextNode): Promise<void>{
+async function setTextSegmentFills(node: TextNode): Promise<void>{
 
   const styledTextSegementId = node.getStyledTextSegments(['fillStyleId'])
   console.log("styledTextSegementId:")
@@ -47,7 +47,7 @@ async function detachVariablesOnNodesFills(node: SupportedNode): Promise<void> {
   
   if (typeof node.fills == 'symbol' && node.type == "TEXT"){
     console.log('fills is symbol, must have colored text segements')
-    await detachVariablesOnTextSegmentFills(node)
+    await setTextSegmentFills(node)
     return
   }
 

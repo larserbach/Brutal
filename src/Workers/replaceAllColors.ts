@@ -30,7 +30,7 @@ const SEMITRANSPARENT: SolidPaint = {
 };
 
 async function replaceAnyColorTypeOnNodesFills(node: SupportedNode): Promise<void> {
-  if (!(node.fills instanceof Array && node.fills.length)) {
+  if ((node.fills instanceof Array && !node.fills.length)) {
     return;
   }
   await node.setFillStyleIdAsync("");

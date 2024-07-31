@@ -8,33 +8,33 @@ import { SupportedNode } from "../types";
 function setTextSegmentFills(node: TextNode): void{
 
   const styledTextSegementId = node.getStyledTextSegments(['fillStyleId'])
-  console.log("styledTextSegementId:")
-  console.log(styledTextSegementId)
+  // console.log("styledTextSegementId:")
+  // console.log(styledTextSegementId)
 
   const segmentsWithStyleApplied = styledTextSegementId.filter(segment => {
     return segment.fillStyleId
   })
 
-  console.log("segmentsWithStyleApplied:")
-  console.log(segmentsWithStyleApplied)
+  // console.log("segmentsWithStyleApplied:")
+  // console.log(segmentsWithStyleApplied)
 
   const styledTextSegementFills = node.getStyledTextSegments(['fills'])
-  console.log("styledTextSegementFills")
-  console.log(styledTextSegementFills)
+  // console.log("styledTextSegementFills")
+  // console.log(styledTextSegementFills)
 
   styledTextSegementFills.forEach((segment) => {
 
     if (!("fills" in segment)) return;
     
-    console.log('hasFills')
+    // console.log('hasFills')
 
     if (segmentsWithStyleApplied.some(obj => {
-      console.log(`seg.start ${segment.start}`)
-      console.log(`obj.start ${obj.start}`)
+      // console.log(`seg.start ${segment.start}`)
+      // console.log(`obj.start ${obj.start}`)
       return obj.start == segment.start
     })) {
-      console.log("fills are in segment and has style applied:")
-      console.log(segment)
+      // console.log("fills are in segment and has style applied:")
+      // console.log(segment)
       node.setRangeFills(segment.start, segment.end, [])
     }
   })
@@ -42,10 +42,7 @@ function setTextSegmentFills(node: TextNode): void{
 
 
 async function removeStyleOnNodesFills(node: SupportedNode): Promise<void> {
-  if (node.fillStyleId === "") {
-    return;
-  }
-
+  if (node.fillStyleId === "") return;
   
   console.log(typeof node.fills)
   if (typeof node.fills == 'symbol' && node.type == "TEXT"){

@@ -15,19 +15,19 @@ function filterOutFillsWithVariables(fills: Paint[]): Paint[] {
   })
 }
 
-async function removeVariablesOnTextSegmentFills(node: TextNode): Promise<void>{
+async function setTextSegmentFills(node: TextNode): Promise<void>{
 
   const styledTextSegementId = node.getStyledTextSegments(['fillStyleId'])
-  console.log("styledTextSegementId:")
-  console.log(styledTextSegementId)
+  // console.log("styledTextSegementId:")
+  // console.log(styledTextSegementId)
 
   const styledTextSegementFills = node.getStyledTextSegments(['fills'])
-  console.log("styledTextSegementFills")
-  console.log(styledTextSegementFills)
+  // console.log("styledTextSegementFills")
+  // console.log(styledTextSegementFills)
 
   styledTextSegementFills.forEach((segment) => {
     if ("fills" in segment) {
-      console.log("fills are in segment")
+      // console.log("fills are in segment")
       const newsSegmentsFills = filterOutFillsWithVariables(segment.fills)
       node.setRangeFills(segment.start, segment.end, newsSegmentsFills)
     }
@@ -42,18 +42,16 @@ async function removeVariablesOnTextSegmentFills(node: TextNode): Promise<void>{
 async function removeVariablesOnNodesFills(node: SupportedNode): Promise<void> {
 
   if (typeof node.fills == 'symbol' && node.type == "TEXT"){
-    console.log('fills is symbol, must have colored text segements')
-    await removeVariablesOnTextSegmentFills(node)
+    // console.log('fills is symbol, must have colored text segements')
+    await setTextSegmentFills(node)
     return
   }
 
-  if (node.fillStyleId !== "") {return}
+  if (node.fillStyleId !== "") return
 
   // Checking if it's an array
-  if (!(node.fills instanceof Array)) {
-    console.log('fills is no array')
-    return;
-  }
+  if (!(node.fills instanceof Array)) return;
+  
   const clonedFills: Paint[] = (node.fills).map((x) => clone(x) as Paint);
 
   node.fills = clonedFills.filter((fill) => {
