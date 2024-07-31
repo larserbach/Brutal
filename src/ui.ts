@@ -4,17 +4,17 @@ import { mixpanelToken } from "./private_mixpanelToken"; // It's just this: mixp
 const mixpanel = new Mixpanel(mixpanelToken);
 
 window.onmessage = async (event) => {
-  console.log("window.onmessage");
+  // console.log("window.onmessage");
   const message = event.data.pluginMessage;
-  console.log(`  message.type: ${message.type}`);
+  // console.log(`  message.type: ${message.type}`);
 
   if (message.type === "identify") {
     mixpanel.identify(message.userId);
     try {
       await mixpanel.track("Plugin Started");
-      console.log("  so far so good");
+      // console.log("  so far so good");
     } catch (error) {
-      console.log(error)
+      console.error(error)
       parent.postMessage(
         { pluginMessage: { type: "mixpanel-init-fail", val: true } },
         "*"
@@ -31,7 +31,7 @@ window.onmessage = async (event) => {
         "*"
       );
     } catch (error) {
-      console.log(error)
+      console.error(error)
       parent.postMessage(
         { pluginMessage: { type: "track-failed", data: message.data.msg } },
         "*"

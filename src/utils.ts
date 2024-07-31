@@ -1,6 +1,6 @@
 export function clone(val: any): any {
   const type = typeof val;
-  console.log(type)
+  // console.log(type)
   if (val === null) {
     return null;
   } else if (
